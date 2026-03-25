@@ -1,0 +1,51 @@
+_format_version: "3.0"
+
+services:
+  - name: dxp-bff
+    url: http://host.docker.internal:4201
+    routes:
+      - name: bff-api
+        paths:
+          - /api/v1
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "http://localhost:4200"
+        - "http://localhost:3001"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Authorization
+        - Content-Type
+        - X-Request-ID
+        - X-Tenant-ID
+      exposed_headers:
+        - X-Request-ID
+      credentials: true
+      max_age: 3600
+
+  - name: rate-limiting
+    config:
+      minute: 60
+      policy: local
+
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid
+      echo_downstream: true

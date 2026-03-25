@@ -1,0 +1,31 @@
+module.exports = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'scope-enum': [
+      2,
+      'always',
+      [
+        'bff',
+        'shell',
+        'mfe',
+        'sdk-core',
+        'sdk-react',
+        'sdk-components',
+        'sdk-cli',
+        'contracts',
+        'go-kit',
+        'infra',
+        'docker',
+        'audit',
+        'config-svc',
+        'feature-flags',
+        'jobs',
+        'customer',
+        'policy',
+        'claims',
+        'billing',
+        'deps',
+      ],
+    ],
+  },
+};

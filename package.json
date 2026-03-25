@@ -1,0 +1,29 @@
+{
+  "name": "@dxp/root",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Digital Experience Platform — Headless Composable Framework",
+  "scripts": {
+    "build": "nx run-many -t build",
+    "test": "nx run-many -t test",
+    "lint": "nx run-many -t lint",
+    "dev:bff": "nx serve bff",
+    "dev:shell": "nx serve shell"
+  },
+  "devDependencies": {
+    "nx": "^21.3.2",
+    "@nx/js": "^21.3.2",
+    "@nx/react": "^21.3.2",
+    "@nx/nest": "^21.3.2",
+    "@nx/webpack": "^21.3.2",
+    "typescript": "^5.8.3",
+    "prettier": "^3.5.3",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.27.0"
+}
