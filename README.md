@@ -84,25 +84,123 @@ POSTGRES_PASSWORD=your-password
 POSTGRES_DB=dxp
 ```
 
-### 5. Start Keycloak and Kong (Docker)
+### 5. Start Keycloak and Kong
 
-These two services run in Docker. They connect to your local PostgreSQL.
+You have two options — Docker (recommended, easiest) or local install (no Docker needed).
+
+#### Option A: Docker (recommended)
 
 ```bash
 make up
 ```
 
-This starts:
-- **Keycloak** (Identity Provider) on `http://localhost:8080`
-- **Kong** (API Gateway) on `http://localhost:8000`
-
-Wait ~30 seconds for Keycloak to finish starting, then verify:
+This starts Keycloak and Kong in Docker containers that connect to your local PostgreSQL. Wait ~30 seconds for Keycloak to start, then verify:
 
 ```bash
 make status
 ```
 
-Expected output:
+#### Option B: Local Install (no Docker)
+
+If you can't or don't want to run Docker, install Keycloak and Kong natively.
+
+**Install Keycloak locally:**
+
+```bash
+# Download Keycloak 26.x
+curl -LO https://github.com/keycloak/keycloak/releases/download/26.2.5/keycloak-26.2.5.tar.gz
+tar xzf keycloak-26.2.5.tar.gz
+cd keycloak-26.2.5
+
+# Configure to use your local PostgreSQL
+export KC_DB=postgres
+export KC_DB_URL=jdbc:postgresql://localhost:5432/dxp
+export KC_DB_USERNAME=<your-postgres-user>
+export KC_DB_PASSWORD=<your-postgres-password>
+export KC_BOOTSTRAP_ADMIN_USERNAME=admin
+export KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+export KC_HEALTH_ENABLED=true
+
+# Start in dev mode (first run creates tables)
+bin/kc.sh start-dev --import-realm
+
+# Keycloak is now at http://localhost:8080
+```
+
+**Import the DXP realm:**
+
+```bash
+# Copy realm config to Keycloak's import directory
+cp /path/to/dxp/infra/keycloak/dxp-realm.json data/import/
+
+# Restart Keycloak — it auto-imports on start
+bin/kc.sh start-dev --import-realm
+```
+
+Or import manually via the admin console:
+1. Open http://localhost:8080 → log in as `admin` / `admin`
+2. Click the realm dropdown → **Create realm**
+3. Click **Browse** → select `infra/keycloak/dxp-realm.json`
+4. Click **Create**
+
+**Install Kong locally:**
+
+```bash
+# macOS via Homebrew
+brew install kong
+
+# Create Kong config directory
+mkdir -p /etc/kong
+
+# Copy the declarative config
+cp /path/to/dxp/infra/kong/kong.yml /etc/kong/kong.yml
+
+# Set environment variables
+export KONG_DATABASE=off
+export KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
+export KONG_PROXY_LISTEN=0.0.0.0:8000
+export KONG_ADMIN_LISTEN=127.0.0.1:8001
+
+# Start Kong
+kong start
+
+# Kong proxy is now at http://localhost:8000
+# Kong admin is at http://localhost:8001
+```
+
+**Update the BFF CORS** (if Keycloak is on a non-default port):
+
+If your local Keycloak runs on a different port, update `.env`:
+
+```env
+KEYCLOAK_URL=http://localhost:<your-port>
+```
+
+**Verify local setup:**
+
+```bash
+# Check Keycloak
+curl -sf http://localhost:8080/realms/dxp | python3 -c "import sys,json; print('Keycloak:', json.load(sys.stdin)['realm'])"
+
+# Check Kong
+curl -sf http://localhost:8001/status | python3 -c "import sys,json; print('Kong:', json.load(sys.stdin)['server']['connections_accepted'], 'connections')"
+
+# Check Postgres
+pg_isready && echo "PostgreSQL: UP"
+
+# Check Redis
+redis-cli ping
+```
+
+**Run without `make up`:**
+
+Since Keycloak and Kong are running locally, skip `make up` and go straight to:
+
+```bash
+make dev
+```
+
+#### Both options — expected status
 
 ```
 --- Service Health ---
