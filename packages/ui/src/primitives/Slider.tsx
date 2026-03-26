@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { cn } from '../utils/cn';
+import { Card } from './Card';
 
 export interface SliderProps {
   min: number;
@@ -9,19 +10,26 @@ export interface SliderProps {
   defaultValue?: number;
   onChange?: (value: number) => void;
   label?: string;
+  unit?: string;
   formatValue?: (value: number) => string;
-  showValue?: boolean;
+  showTicks?: boolean;
+  tickCount?: number;
+  color?: string;
+  centerZero?: boolean;
+  variant?: 'default' | 'card';
   disabled?: boolean;
 }
 
 export function Slider({
   min, max, step = 1, value: controlledValue, defaultValue, onChange,
-  label, formatValue, showValue = true, disabled,
+  label, unit, formatValue, showTicks = true, tickCount = 20,
+  color, centerZero = false, variant = 'default', disabled,
 }: SliderProps) {
-  const [internalValue, setInternalValue] = useState(defaultValue ?? min);
+  const [internalValue, setInternalValue] = useState(defaultValue ?? (centerZero ? 0 : min));
   const value = controlledValue ?? internalValue;
   const percent = ((value - min) / (max - min)) * 100;
-  const displayValue = formatValue ? formatValue(value) : String(value);
+  const displayValue = formatValue ? formatValue(value) : `${value >= 0 && centerZero ? '+' : ''}${value}`;
+  const fillColor = color || 'var(--dxp-brand)';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
@@ -29,15 +37,53 @@ export function Slider({
     onChange?.(v);
   };
 
-  return (
-    <div className={cn('space-y-2', disabled && 'opacity-50 pointer-events-none')}>
-      {(label || showValue) && (
-        <div className="flex items-center justify-between">
-          {label && <span className="text-sm font-medium text-[var(--dxp-text)]">{label}</span>}
-          {showValue && <span className="text-sm font-bold text-[var(--dxp-brand)]">{displayValue}</span>}
+  // For center-zero sliders, fill from center to thumb
+  const centerPercent = centerZero ? ((0 - min) / (max - min)) * 100 : 0;
+  const fillStyle = useMemo(() => {
+    if (centerZero) {
+      const left = Math.min(centerPercent, percent);
+      const right = Math.max(centerPercent, percent);
+      return {
+        background: `linear-gradient(to right,
+          var(--dxp-border-light) 0%, var(--dxp-border-light) ${left}%,
+          ${fillColor}40 ${left}%, ${fillColor}40 ${right}%,
+          var(--dxp-border-light) ${right}%, var(--dxp-border-light) 100%)`,
+      };
+    }
+    return {
+      background: `linear-gradient(to right, ${fillColor}30 0%, ${fillColor}30 ${percent}%, var(--dxp-border-light) ${percent}%, var(--dxp-border-light) 100%)`,
+    };
+  }, [percent, centerPercent, centerZero, fillColor]);
+
+  const ticks = useMemo(() => {
+    if (!showTicks) return [];
+    return Array.from({ length: tickCount + 1 }, (_, i) => i / tickCount * 100);
+  }, [showTicks, tickCount]);
+
+  const content = (
+    <div className={cn('space-y-1', disabled && 'opacity-50 pointer-events-none')}>
+      {/* Label row with value */}
+      <div className="flex items-center justify-between mb-2">
+        {label && <span className="text-sm font-semibold text-[var(--dxp-text)]">{label}</span>}
+        <span className="text-sm font-bold tabular-nums" style={{ color: fillColor }}>
+          {displayValue}{unit ? ` ${unit}` : ''}
+        </span>
+      </div>
+
+      {/* Track */}
+      <div className="relative h-8 flex items-center">
+        {/* Background track with fill */}
+        <div className="absolute inset-x-0 h-3 rounded-full overflow-hidden" style={fillStyle}>
+          {/* Center line for center-zero */}
+          {centerZero && (
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-[var(--dxp-text-muted)]"
+              style={{ left: `${centerPercent}%` }}
+            />
+          )}
         </div>
-      )}
-      <div className="relative">
+
+        {/* Range input */}
         <input
           type="range"
           min={min}
@@ -46,22 +92,40 @@ export function Slider({
           value={value}
           onChange={handleChange}
           disabled={disabled}
-          className="w-full h-2 rounded-full appearance-none cursor-pointer
-            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
-            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--dxp-brand)]
-            [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer
-            [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white
-            [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:bg-[var(--dxp-brand)] [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white"
-          style={{
-            background: `linear-gradient(to right, var(--dxp-brand) 0%, var(--dxp-brand) ${percent}%, var(--dxp-border) ${percent}%, var(--dxp-border) 100%)`,
-          }}
+          className="relative w-full h-3 appearance-none cursor-pointer bg-transparent z-10
+            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-8
+            [&::-webkit-slider-thumb]:rounded-[3px] [&::-webkit-slider-thumb]:cursor-pointer
+            [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[var(--dxp-border)]
+            [&::-webkit-slider-thumb]:bg-[var(--dxp-surface)]
+            [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-8 [&::-moz-range-thumb]:rounded-[3px]
+            [&::-moz-range-thumb]:bg-[var(--dxp-surface)] [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[var(--dxp-border)]
+            [&::-moz-range-thumb]:cursor-pointer"
         />
       </div>
-      <div className="flex justify-between text-[10px] text-[var(--dxp-text-muted)]">
-        <span>{formatValue ? formatValue(min) : min}</span>
-        <span>{formatValue ? formatValue(max) : max}</span>
-      </div>
+
+      {/* Tick marks */}
+      {showTicks && (
+        <div className="relative h-3 mx-2">
+          {ticks.map((pos, i) => {
+            const isMajor = i % 5 === 0;
+            return (
+              <div
+                key={i}
+                className={cn(
+                  'absolute bottom-0',
+                  isMajor ? 'w-0.5 h-2.5 bg-[var(--dxp-text-muted)]/40' : 'w-px h-1.5 bg-[var(--dxp-border)]',
+                )}
+                style={{ left: `${pos}%`, transform: 'translateX(-50%)' }}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
+
+  if (variant === 'card') {
+    return <Card className="p-4">{content}</Card>;
+  }
+  return content;
 }
