@@ -1,6 +1,6 @@
 import React from 'react';
-import { DashboardCard, StatusBadge, Card } from '@dxp/ui';
-import { dashboardStats, claims, notifications } from '../data/mock';
+import { StatsDisplay, Chart, StatusBadge, Card } from '@dxp/ui';
+import { claims, notifications, claimsChartData, premiumChartData } from '../data/mock';
 
 export function Dashboard() {
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -12,11 +12,36 @@ export function Dashboard() {
         <p className="text-[var(--dxp-text-secondary)] font-medium mt-1">Today is Monday, March 24, 2026</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <DashboardCard title="Active Policies" value={dashboardStats.activePolicies.value} subtitle="Standard Care" />
-        <DashboardCard title="Open Claims" value={dashboardStats.openClaims.value} trend={dashboardStats.openClaims.trend} />
-        <DashboardCard title="Pending Documents" value={dashboardStats.pendingDocuments.value} subtitle="Action Needed" />
-        <DashboardCard title="Next Payment" value={dashboardStats.nextPayment.value} subtitle={dashboardStats.nextPayment.subtitle} />
+      {/* Stats Display — replaces individual DashboardCards */}
+      <div className="mb-8">
+        <StatsDisplay stats={[
+          { label: 'Active Policies', value: 3, delta: { value: 0, label: 'vs last month' } },
+          { label: 'Open Claims', value: 1, delta: { value: -50, label: 'vs last month' } },
+          { label: 'Pending Documents', value: 2, delta: { value: 100, label: 'new this week' } },
+          { label: 'Next Payment', value: 482, format: 'currency' },
+        ]} />
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        <Chart
+          type="bar"
+          data={claimsChartData}
+          xKey="month"
+          yKeys={['filed', 'resolved']}
+          title="Claims Activity"
+          description="Filed vs resolved claims — last 6 months"
+          height={250}
+        />
+        <Chart
+          type="line"
+          data={premiumChartData}
+          xKey="month"
+          yKeys={['amount']}
+          title="Monthly Premium"
+          description="Total premium trend"
+          height={250}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-10">

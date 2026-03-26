@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { DataTable, StatusBadge, Button, Card, StepIndicator, FileUploadZone, Input, type Column } from '@dxp/ui';
-import { claims } from '../data/mock';
+import { DataTable, StatusBadge, Button, Card, StepIndicator, FileUploadZone, Input, ProgressTracker, ApprovalCard, type Column } from '@dxp/ui';
+import { claims, claimProcessingSteps, pendingApprovals } from '../data/mock';
 
 type Claim = typeof claims[0];
 
@@ -81,6 +81,29 @@ export function Claims() {
           </div>
         </Card>
       )}
+
+      {/* Active claim tracking + pending approvals */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        <ProgressTracker
+          steps={claimProcessingSteps}
+          title="CLM-2024-001 — Collision Claim"
+          estimatedCompletion="Apr 5, 2026"
+        />
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-[var(--dxp-text)]">Pending Approvals</h3>
+          {pendingApprovals.map((approval, i) => (
+            <ApprovalCard
+              key={i}
+              title={approval.title}
+              description={approval.description}
+              metadata={approval.metadata}
+              status="pending"
+              onApprove={() => alert('Approved!')}
+              onReject={() => alert('Rejected')}
+            />
+          ))}
+        </div>
+      </div>
 
       <h3 className="text-2xl font-extrabold tracking-tight mb-8">Claim History</h3>
       <DataTable columns={columns} data={claims} />
