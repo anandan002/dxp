@@ -403,4 +403,320 @@ const accounts = await apiFetch('/integrations/salesforce/call', {
 
 For SAP/SOAP: build SapAdapter or SoapAdapter implementing IntegrationPort. The port interface stays the same.`,
   },
+
+  // ── FHIR / Da Vinci Healthcare Modules ────────────────────────────────────
+
+  {
+    name: 'Prior Auth (Da Vinci PAS)',
+    description:
+      'Prior Authorization Support following the HL7 Da Vinci PAS IG. Maps FHIR Claim (use=preauthorization) + ClaimResponse. Also implements CRD (Coverage Requirements Discovery) and DTR (Documentation Templates & Rules).',
+    port: 'PriorAuthPort',
+    portInterface: `abstract class PriorAuthPort {
+  abstract listPriorAuths(tenantId: string, filters: PAQueueFilters): Promise<FhirPaginatedResult<PriorAuthSummary>>;
+  abstract getPriorAuthDetail(tenantId: string, id: string): Promise<PriorAuthDetail>;
+
+  // CRD — check if prior auth is required before ordering
+  abstract checkRequirement(tenantId: string, serviceCode: string, memberId: string): Promise<CRDResponse>;
+
+  // DTR — fetch questionnaire for a service code
+  abstract getDocTemplate(tenantId: string, serviceCode: string): Promise<DTRTemplate>;
+
+  // PAS — submit a new prior auth request
+  abstract submitRequest(tenantId: string, data: PASubmission): Promise<PriorAuthSummary>;
+
+  // Record a payer decision (approved / denied / pended)
+  abstract decide(tenantId: string, id: string, decision: PADecision): Promise<PriorAuthDetail>;
+
+  abstract getDashboardMetrics(tenantId: string): Promise<PADashboardMetrics>;
+  abstract getReviewQueue(tenantId: string, filters: PAQueueFilters): Promise<FhirPaginatedResult<PriorAuthSummary>>;
+}`,
+    adapters: [
+      {
+        name: 'DaVinciPASAdapter',
+        envValue: 'davinci-pas',
+        description:
+          'Reads/writes FHIR R4 Claim (use=preauthorization) and ClaimResponse. Uses _include=Claim:patient to resolve member names in a single round-trip. Follows the Da Vinci PAS v2.0 IG.',
+        config: `PRIOR_AUTH_ADAPTER=davinci-pas
+FHIR_BASE_URL=http://localhost:8090/fhir
+FHIR_AUTH_TOKEN=   # optional SMART-on-FHIR bearer token`,
+      },
+      {
+        name: 'ManualPAAdapter',
+        envValue: 'manual-pa',
+        description: 'Returns stub data. No FHIR server required. Useful for demos and CI.',
+        config: `PRIOR_AUTH_ADAPTER=manual-pa`,
+      },
+    ],
+    envVar: 'PRIOR_AUTH_ADAPTER',
+    endpoints: [
+      { method: 'GET',  path: '/prior-auth',                    description: 'List prior authorizations' },
+      { method: 'GET',  path: '/prior-auth/queue',               description: 'Clinical review queue (internal payer)' },
+      { method: 'GET',  path: '/prior-auth/dashboard',           description: 'Dashboard metrics (approval rate, turnaround, top services)' },
+      { method: 'GET',  path: '/prior-auth/template/27447',      description: 'DTR — questionnaire for CPT 27447' },
+      { method: 'POST', path: '/prior-auth/check',               description: 'CRD — check if prior auth is required', sampleBody: JSON.stringify({ serviceCode: '27447', memberId: 'member-001' }, null, 2) },
+      { method: 'POST', path: '/prior-auth/submit',              description: 'PAS — submit a new PA request', sampleBody: JSON.stringify({ memberId: 'member-001', serviceCode: '27447', urgency: 'routine', clinicalReasonCode: 'M17.11', requestedServiceDate: { start: '2026-05-01' }, notes: 'Conservative treatment failed after 6 months.' }, null, 2) },
+      { method: 'PUT',  path: '/prior-auth/pa-id-here/decide',   description: 'Record a payer decision', sampleBody: JSON.stringify({ decision: 'approved', rationale: 'Medical necessity criteria met.', expirationDate: '2026-12-31' }, null, 2) },
+    ],
+    sdkUsage: `import { usePriorAuths, usePACheck, usePASubmit, usePAQueue, usePADashboard } from '@dxp/sdk-react';
+
+// Member — list their PAs
+const { data } = usePriorAuths({ status: 'in-review' });
+
+// Provider — CRD check before ordering
+const check = usePACheck();
+const { requiresAuth } = await check.mutateAsync({ serviceCode: '27447', memberId });
+
+// Provider — submit PAS request
+const submit = usePASubmit();
+submit.mutate({ memberId, serviceCode: '27447', urgency: 'routine', ... });
+
+// Internal — payer review queue + decisions
+const { data: queue } = usePAQueue({ urgency: 'urgent' });`,
+    setupGuide: `Da Vinci PAS (Prior Authorization Support)
+1. Set PRIOR_AUTH_ADAPTER=davinci-pas
+2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+3. Run "make up" to start HAPI FHIR, then "pnpm seed:fhir" to seed 30 PA requests
+4. Restart BFF — all /prior-auth endpoints now read from HAPI FHIR
+
+FHIR Resource Mapping:
+  Claim (use=preauthorization)  →  PriorAuthSummary / PriorAuthDetail
+  ClaimResponse                 →  decision, rationale, expirationDate
+  CoverageEligibilityResponse   →  CRD check (/prior-auth/check)
+  Questionnaire                 →  DTR template (/prior-auth/template/:code)
+
+Da Vinci IGs implemented: PAS v2.0, CRD v2.0, DTR v2.0
+Stub mode (no FHIR): set PRIOR_AUTH_ADAPTER=manual-pa`,
+  },
+  {
+    name: 'Claims (FHIR EOB)',
+    description:
+      'Reads claims and Explanations of Benefit from FHIR R4 ExplanationOfBenefit resources. Supports member-facing claims history, itemized EOB detail, and appeal submission.',
+    port: 'ClaimsPort',
+    portInterface: `abstract class ClaimsPort {
+  abstract listClaims(tenantId: string, memberId: string, filters: ClaimFilters): Promise<FhirPaginatedResult<ClaimSummary>>;
+  abstract getClaimDetail(tenantId: string, id: string): Promise<ClaimSummary>;
+  abstract getEOB(tenantId: string, id: string): Promise<EOBDetail>;
+  abstract submitAppeal(tenantId: string, claimId: string, data: AppealSubmission): Promise<Appeal>;
+  abstract getDashboardMetrics(tenantId: string): Promise<ClaimDashboardMetrics>;
+}`,
+    adapters: [
+      {
+        name: 'FhirClaimAdapter',
+        envValue: 'fhir-claim',
+        description: 'Queries FHIR R4 ExplanationOfBenefit. Resolves patient via _include. Maps adjudication arrays to billed/allowed/paid amounts.',
+        config: `CLAIMS_ADAPTER=fhir-claim
+FHIR_BASE_URL=http://localhost:8090/fhir`,
+      },
+      {
+        name: 'ManualClaimAdapter',
+        envValue: 'manual',
+        description: 'Returns stub claims. No FHIR server required.',
+        config: `CLAIMS_ADAPTER=manual`,
+      },
+    ],
+    envVar: 'CLAIMS_ADAPTER',
+    endpoints: [
+      { method: 'GET',  path: '/claims?memberId=member-001',       description: 'List claims for a member' },
+      { method: 'GET',  path: '/claims/dashboard',                  description: 'Claims dashboard (totals, denial rate, avg processing time)' },
+      { method: 'POST', path: '/claims/claim-id/appeal',            description: 'Submit a claim appeal', sampleBody: JSON.stringify({ reason: 'Medical necessity not evaluated', supportingNotes: 'See clinical documentation', documentIds: [] }, null, 2) },
+    ],
+    sdkUsage: `import { useClaims, useClaimEOB, useAppeal } from '@dxp/sdk-react';
+
+// Member — list their claims
+const { data } = useClaims({ status: 'processed', page: 1 });
+
+// Itemized EOB
+const { data: eob } = useClaimEOB(claimId);
+// eob.billedAmount, eob.allowedAmount, eob.memberResponsibility
+
+// Appeal
+const appeal = useAppeal();
+appeal.mutate({ claimId, reason: 'Billing error on service date' });`,
+    setupGuide: `FHIR Claims (ExplanationOfBenefit)
+1. Set CLAIMS_ADAPTER=fhir-claim
+2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+3. Run "pnpm seed:fhir" — seeds ~200 ExplanationOfBenefit across 50 patients
+4. Query: GET /claims?memberId=<patient-uuid>
+
+FHIR Resource Mapping:
+  ExplanationOfBenefit  →  ClaimSummary, EOBDetail
+    .patient            →  memberId (resolved via _include=EOB:patient)
+    .item[]             →  service line items
+    .adjudication[]     →  billed / allowed / paid amounts
+    .outcome            →  status (complete = processed, queued = pending)`,
+  },
+  {
+    name: 'Eligibility (FHIR Coverage)',
+    description:
+      'Member benefits, deductible accumulators, cost estimates, and digital ID card. Reads FHIR R4 Coverage + CoverageEligibilityResponse. Enables real-time eligibility verification for providers.',
+    port: 'EligibilityPort',
+    portInterface: `abstract class EligibilityPort {
+  abstract getBenefits(tenantId: string, memberId: string): Promise<BenefitCategory[]>;
+  abstract getAccumulators(tenantId: string, memberId: string): Promise<Accumulators>;
+  abstract getCostEstimate(tenantId: string, serviceCode: string, memberId: string): Promise<CostEstimate>;
+  abstract getIdCard(tenantId: string, memberId: string): Promise<DigitalIdCard>;
+}`,
+    adapters: [
+      {
+        name: 'FhirCoverageAdapter',
+        envValue: 'fhir-coverage',
+        description: 'Reads FHIR Coverage resources for plan details. Uses CoverageEligibilityResponse for real-time eligibility checks.',
+        config: `ELIGIBILITY_ADAPTER=fhir-coverage
+FHIR_BASE_URL=http://localhost:8090/fhir`,
+      },
+      {
+        name: 'ManualEligibilityAdapter',
+        envValue: 'manual',
+        description: 'Returns stub benefits and ID card. No FHIR server required.',
+        config: `ELIGIBILITY_ADAPTER=manual`,
+      },
+    ],
+    envVar: 'ELIGIBILITY_ADAPTER',
+    endpoints: [
+      { method: 'GET', path: '/eligibility/benefits?memberId=member-001',      description: 'Benefit categories (medical, dental, vision, Rx)' },
+      { method: 'GET', path: '/eligibility/accumulators?memberId=member-001',   description: 'Deductible and OOP max progress' },
+      { method: 'GET', path: '/eligibility/id-card?memberId=member-001',        description: 'Digital ID card (plan, group, member number)' },
+      { method: 'GET', path: '/eligibility/cost-estimate?serviceCode=27447&memberId=member-001', description: 'Real-time cost estimate for a service' },
+    ],
+    sdkUsage: `import { useBenefits, useAccumulators, useIdCard, useCostEstimate } from '@dxp/sdk-react';
+
+const { data: benefits }     = useBenefits(memberId);
+const { data: accumulators } = useAccumulators(memberId);
+// accumulators.deductible.met / .total, accumulators.oopMax.met / .total
+
+const { data: card }         = useIdCard(memberId);
+// card.memberName, card.memberId, card.planName, card.groupNumber
+
+const { data: estimate }     = useCostEstimate('27447', memberId);
+// estimate.estimatedCost, estimate.memberResponsibility`,
+    setupGuide: `FHIR Eligibility (Coverage)
+1. Set ELIGIBILITY_ADAPTER=fhir-coverage
+2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+3. Run "pnpm seed:fhir" — seeds Coverage for each of 50 patients (HMO, PPO, Medicare Advantage)
+
+FHIR Resource Mapping:
+  Coverage                     →  planName, planType, groupNumber, effectiveDate
+  CoverageEligibilityResponse  →  benefit limits, remaining amounts, accumulators
+
+Provider Eligibility Check:
+  /eligibility/id-card is designed for point-of-service verification.
+  Providers confirm active coverage before rendering care.`,
+  },
+  {
+    name: 'Provider Directory',
+    description:
+      'Search, validate, and retrieve quality metrics for providers. Reads FHIR Practitioner, PractitionerRole, Organization, and Location. Supports NPPES NPI Registry as an alternative adapter.',
+    port: 'ProviderDirectoryPort',
+    portInterface: `abstract class ProviderDirectoryPort {
+  abstract search(tenantId: string, params: ProviderSearchParams): Promise<FhirPaginatedResult<ProviderSummary>>;
+  abstract getByNPI(tenantId: string, npi: string): Promise<ProviderDetail>;
+  abstract validate(tenantId: string, npi: string): Promise<ProviderValidation>;
+  abstract getQualityMetrics(tenantId: string): Promise<ProviderQualityMetrics[]>;
+}`,
+    adapters: [
+      {
+        name: 'FhirProviderAdapter',
+        envValue: 'fhir-provider',
+        description: 'Reads Practitioner + PractitionerRole + Organization from HAPI. Filters by name, specialty, location, network status.',
+        config: `PROVIDER_DIR_ADAPTER=fhir-provider
+FHIR_BASE_URL=http://localhost:8090/fhir`,
+      },
+      {
+        name: 'NppesAdapter',
+        envValue: 'nppes',
+        description: 'Queries the CMS NPPES NPI Registry (public, no auth). Useful when the client has no internal FHIR provider directory.',
+        config: `PROVIDER_DIR_ADAPTER=nppes
+# NPPES_BASE_URL=https://npiregistry.cms.hhs.gov/api  (default)`,
+      },
+    ],
+    envVar: 'PROVIDER_DIR_ADAPTER',
+    endpoints: [
+      { method: 'GET', path: '/providers/search?specialty=Cardiology&pageSize=5', description: 'Search by specialty' },
+      { method: 'GET', path: '/providers/1000000000',                              description: 'Full provider profile by NPI' },
+      { method: 'GET', path: '/providers/1000000000/validate',                     description: 'Validate NPI — license, sanctions, network' },
+      { method: 'GET', path: '/providers/quality?pageSize=10',                     description: 'Provider quality metrics (HEDIS, star ratings)' },
+    ],
+    sdkUsage: `import { useProviderSearch, useProviderDetail } from '@dxp/sdk-react';
+
+// Find in-network providers
+const { data } = useProviderSearch({
+  specialty: 'Cardiology',
+  location: '90210',
+  network: 'in-network',
+});
+
+// Profile + quality metrics
+const { data: provider } = useProviderDetail(npi);
+// provider.name, provider.specialties[], provider.qualityMetrics.hedisStarRating`,
+    setupGuide: `Provider Directory
+Option A — Internal FHIR Directory:
+1. Set PROVIDER_DIR_ADAPTER=fhir-provider
+2. Run "pnpm seed:fhir" — seeds 100 Practitioner + PractitionerRole + Organization
+3. GET /providers/search?specialty=Cardiology
+
+Option B — NPPES NPI Registry (CMS public data):
+1. Set PROVIDER_DIR_ADAPTER=nppes
+2. No credentials needed — resolves from national NPI registry in real time
+
+Da Vinci PDex Plan Net IG:
+  FhirProviderAdapter follows the Da Vinci PDex Plan Net IG for provider directory
+  interoperability — health plans can exchange directory data with other payers.`,
+  },
+  {
+    name: 'Risk Stratification (HCC)',
+    description:
+      'Population health risk scoring using CMS-HCC v28 methodology. Computes RAF scores from FHIR Condition and Claim resources. Powers care manager worklist, member risk profiles, and care gap closure.',
+    port: 'RiskStratificationPort',
+    portInterface: `abstract class RiskStratificationPort {
+  abstract getPopulationDashboard(tenantId: string): Promise<PopulationDashboardMetrics>;
+  abstract getRiskWorklist(tenantId: string, params: WorklistParams): Promise<WorklistEntry[]>;
+  abstract getMemberRiskProfile(tenantId: string, memberId: string): Promise<MemberRiskProfile>;
+  abstract getCareGaps(tenantId: string, memberId: string): Promise<CareGap[]>;
+  abstract closeCareGap(tenantId: string, gapId: string, data: CloseGapRequest): Promise<CareGap>;
+}`,
+    adapters: [
+      {
+        name: 'HccEngineAdapter',
+        envValue: 'hcc-engine',
+        description: 'Computes CMS-HCC v28 RAF scores from FHIR Condition (ICD-10) resources. Generates care gaps and ranks members by risk tier for proactive outreach.',
+        config: `RISK_STRAT_ADAPTER=hcc-engine
+FHIR_BASE_URL=http://localhost:8090/fhir
+HCC_MODEL_VERSION=v28`,
+      },
+    ],
+    envVar: 'RISK_STRAT_ADAPTER',
+    endpoints: [
+      { method: 'GET',  path: '/population/dashboard',                          description: 'Population KPIs (high-risk count, avg RAF, gap closure rate)' },
+      { method: 'GET',  path: '/population/worklist?tier=high&pageSize=10',     description: 'Care manager worklist — members ranked by risk tier' },
+      { method: 'GET',  path: '/population/member/member-id/risk',              description: 'Member risk profile (RAF score, HCC categories, care gaps)' },
+      { method: 'GET',  path: '/population/care-gaps?memberId=member-001',      description: 'Open care gaps for a member (HEDIS-based)' },
+      { method: 'POST', path: '/population/care-gaps/gap-id/close',             description: 'Close a care gap with evidence', sampleBody: JSON.stringify({ closureType: 'documented', notes: 'A1c lab resulted 7.2% on 2026-03-15.' }, null, 2) },
+    ],
+    sdkUsage: `import { usePopulationDashboard, useRiskWorklist, useMemberRiskProfile, useCareGaps } from '@dxp/sdk-react';
+
+// Population KPIs
+const { data: pop } = usePopulationDashboard();
+// pop.highRiskMembers, pop.avgRafScore, pop.openCareGaps
+
+// Care manager worklist (highest RAF first)
+const { data: worklist } = useRiskWorklist({ tier: 'high', pageSize: 25 });
+
+// Member drill-down
+const { data: risk } = useMemberRiskProfile(memberId);
+// risk.rafScore, risk.hccCategories[], risk.tier, risk.careGaps[]`,
+    setupGuide: `Risk Stratification (CMS-HCC v28)
+1. Set RISK_STRAT_ADAPTER=hcc-engine
+2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+3. Run "pnpm seed:fhir" — seeds ICD-10 Condition resources for 50 patients.
+   The HCC engine computes RAF scores at query time from these Conditions.
+
+HCC Score Computation:
+  Condition.code (ICD-10)  →  HCC Category lookup  →  RAF addend
+  Sum of addends           →  Member RAF score
+  Risk banding: < 0.8 = low | 0.8–1.5 = medium | > 1.5 = high | > 2.5 = critical
+
+Care Gap Logic:
+  Cross-references HEDIS measures against member claims to identify open gaps
+  (e.g. A1c not tested in 12 months, mammogram overdue, colorectal screening missing).`,
+  },
 ];

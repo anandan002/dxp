@@ -1,17 +1,19 @@
-.PHONY: help up down dev dev-bff dev-portal build-storybook test lint clean status
+.PHONY: help up down dev dev-bff dev-portal dev-payer build-storybook test lint clean status fhir-seed fhir-reset
 
 COMPOSE = docker compose
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-up: ## Start infrastructure (Keycloak + Kong; uses local Postgres & Redis)
+up: ## Start infrastructure (Keycloak + Kong + HAPI FHIR; uses local Postgres & Redis)
+	@createdb hapi_fhir 2>/dev/null || true
 	$(COMPOSE) up -d
 	@echo "\n--- DXP Infrastructure ---"
 	@echo "PostgreSQL:  localhost:5432 (local)"
 	@echo "Redis:       localhost:6379 (local)"
 	@echo "Keycloak:    http://localhost:8080 (admin/admin)"
 	@echo "Kong:        http://localhost:8000"
+	@echo "HAPI FHIR:   http://localhost:8090/fhir"
 
 down: ## Stop Docker services
 	$(COMPOSE) down
@@ -35,6 +37,23 @@ dev-bff: ## Start BFF only
 dev-portal: ## Start portal only (requires BFF running)
 	cd starters/insurance-portal && pnpm dev
 
+dev-payer: ## Start full payer stack (BFF + Portal + Playground + Storybook + IDP)
+	@bash dev.sh
+
+dev-payer-no-infra: ## Start payer stack without Docker (infra already running)
+	@bash dev.sh --no-infra
+
+fhir-seed: ## Seed HAPI FHIR with synthetic payer data
+	cd apps/bff && pnpm seed:fhir
+
+fhir-reset: ## Reset HAPI FHIR (drop + recreate + reseed)
+	@dropdb hapi_fhir 2>/dev/null || true
+	@createdb hapi_fhir
+	$(COMPOSE) restart hapi-fhir
+	@echo "Waiting for HAPI FHIR to start..."
+	@sleep 30
+	cd apps/bff && pnpm seed:fhir
+
 build-storybook: ## Rebuild Storybook static into portal
 	cd packages/ui && npx storybook build -o ../../starters/insurance-portal/public/storybook
 
@@ -54,5 +73,9 @@ status: ## Check all services
 	@redis-cli ping > /dev/null 2>&1 && echo "Redis:      UP (local)" || echo "Redis:      DOWN"
 	@curl -sf http://localhost:8080/realms/dxp > /dev/null 2>&1 && echo "Keycloak:   UP (dxp realm)" || echo "Keycloak:   DOWN"
 	@curl -sf http://localhost:8001/status > /dev/null 2>&1 && echo "Kong:       UP" || echo "Kong:       DOWN"
+	@curl -sf http://localhost:8090/fhir/metadata > /dev/null 2>&1 && echo "HAPI FHIR:  UP (:8090)" || echo "HAPI FHIR:  DOWN"
 	@curl -sf http://localhost:4201/api/v1/health > /dev/null 2>&1 && echo "BFF:        UP (:4201)" || echo "BFF:        DOWN"
 	@curl -sf http://localhost:4200 > /dev/null 2>&1 && echo "Portal:     UP (:4200)" || echo "Portal:     DOWN"
+	@curl -sf http://localhost:4300 > /dev/null 2>&1 && echo "Payer:      UP (:4300)" || echo "Payer:      DOWN"
+	@curl -sf http://localhost:4400 > /dev/null 2>&1 && echo "Playground: UP (:4400)" || echo "Playground: DOWN"
+	@curl -sf http://localhost:4500 > /dev/null 2>&1 && echo "Storybook:  UP (:4500)" || echo "Storybook:  DOWN"

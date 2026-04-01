@@ -15,6 +15,16 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { FhirCoreModule } from './modules/fhir-core/fhir-core.module';
+import { ClaimsModule } from './modules/claims/claims.module';
+import { EligibilityModule } from './modules/eligibility/eligibility.module';
+import { PriorAuthModule } from './modules/prior-auth/prior-auth.module';
+import { ProviderDirectoryModule } from './modules/provider-directory/provider-directory.module';
+import { CarePlanModule } from './modules/care-plan/care-plan.module';
+import { RiskStratificationModule } from './modules/risk-stratification/risk-stratification.module';
+import { QualityMeasuresModule } from './modules/quality-measures/quality-measures.module';
+import { ConsentModule } from './modules/consent/consent.module';
+import { PayerExchangeModule } from './modules/payer-exchange/payer-exchange.module';
 
 @Module({
   imports: [
@@ -37,6 +47,17 @@ import { AuditModule } from './modules/audit/audit.module';
     ChatModule,
     WorkflowModule,
     AuditModule,
+    // Payer domain modules
+    FhirCoreModule,
+    ClaimsModule,
+    EligibilityModule,
+    PriorAuthModule,
+    ProviderDirectoryModule,
+    CarePlanModule,
+    RiskStratificationModule,
+    QualityMeasuresModule,
+    ConsentModule,
+    PayerExchangeModule,
   ],
 })
 export class AppModule {}

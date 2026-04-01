@@ -8,3 +8,4 @@ export * from './search';
 export * from './workflow';
 export * from './rules';
 export * from './analytics';
+export * from './payer';

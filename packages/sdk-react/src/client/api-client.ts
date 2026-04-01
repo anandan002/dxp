@@ -25,6 +25,11 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
+  // Dev member switcher — pass override header when set
+  const devMemberId = typeof localStorage !== 'undefined' ? localStorage.getItem('dxp_dev_member_id') : null;
+  if (devMemberId) {
+    headers['X-Dev-Member-Id'] = devMemberId;
+  }
 
   const response = await fetch(`${config.bffUrl}${path}`, { ...options, headers });
 
