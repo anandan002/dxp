@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Badge } from '@dxp/ui';
+import { toPublicUrl } from '../config/public-urls';
 
 interface PortalCard {
   title: string;
@@ -35,7 +36,7 @@ const portals: PortalCard[] = [
       'Health plan operations portal. 31 pages across member, provider, and internal views. Live Da Vinci PAS, FHIR R4 claims, HCC risk stratification, and population health dashboards.',
     badge: 'FHIR R4 live',
     badgeVariant: 'brand',
-    href: 'http://localhost:4300',
+    href: toPublicUrl('/dxp/payer'),
     external: true,
     features: ['Prior Auth (Da Vinci PAS)', 'Population Health', 'Risk Stratification', 'Provider Directory', 'FHIR Playground'],
     accentClass: 'from-teal-500 to-cyan-600',
@@ -224,3 +225,4 @@ export function Splash({ onNavigate }: SplashProps) {
     </div>
   );
 }
+

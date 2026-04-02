@@ -18,6 +18,16 @@ const mimeTypes: Record<string, string> = {
   '.ico': 'image/x-icon',
 };
 
+const defaultAllowedHosts = ['localhost', '127.0.0.1'];
+
+function getAllowedHosts(): string[] {
+  const rawAllowedHosts = process.env.VITE_ALLOWED_HOSTS ?? defaultAllowedHosts.join(',');
+  return rawAllowedHosts
+    .split(',')
+    .map((host) => host.trim())
+    .filter(Boolean);
+}
+
 function serveStaticSubpaths(): Plugin {
   return {
     name: 'serve-static-subpaths',
@@ -46,15 +56,18 @@ function serveStaticSubpaths(): Plugin {
 }
 
 export default defineConfig({
+  base: '/dxp/payer/',
   plugins: [serveStaticSubpaths(), react()],
   server: {
-    port: 4300,
+    port: 5022,
+    allowedHosts: getAllowedHosts(),
     proxy: {
       '/api': {
-        target: 'http://localhost:4201',
+        target: 'http://localhost:5021',
         changeOrigin: true,
       },
     },
   },
   publicDir: 'public',
 });
+

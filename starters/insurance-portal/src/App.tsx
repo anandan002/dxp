@@ -10,6 +10,7 @@ import { GetQuote } from './pages/GetQuote';
 import { Settings } from './pages/Settings';
 import { FormBuilder } from './pages/FormBuilder';
 import { IntegrationGuide } from './pages/IntegrationGuide';
+import { toPublicUrl } from './config/public-urls';
 
 // ── Nav sets ────────────────────────────────────────────────────────────────
 
@@ -42,12 +43,12 @@ function navForPath(path: string): NavItem[] {
 // ── Dev tools sidebar ────────────────────────────────────────────────────────
 
 const devTools = [
-  { label: 'API Playground',    href: '/playground',          external: false },
+  { label: 'API Playground',    href: '/playground',                                         external: false },
   { label: 'Integration Guide', href: '/integration-guide',   external: false },
   { label: 'Storybook',         href: '/storybook/index.html', external: true },
-  { label: 'Swagger',           href: '/api/docs',             external: true },
-  { label: 'Docs',              href: '/docs/index.html',      external: true },
-  { label: 'Payer Portal',      href: 'http://localhost:4300', external: true },
+  { label: 'Swagger',           href: toPublicUrl('/dxp/api/docs'),                          external: true },
+  { label: 'Docs',              href: toPublicUrl('/dxp/docs/index.html'),                   external: true },
+  { label: 'Payer Portal',      href: toPublicUrl('/dxp/payer'),                             external: true },
 ];
 
 // ── Page router ──────────────────────────────────────────────────────────────
@@ -124,3 +125,4 @@ export function App() {
     </PageLayout>
   );
 }
+
