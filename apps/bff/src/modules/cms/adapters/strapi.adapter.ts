@@ -16,7 +16,7 @@ export class StrapiAdapter extends CmsPort {
 
   constructor(private config: ConfigService) {
     super();
-    const baseURL = this.config.get<string>('STRAPI_URL', 'http://localhost:1337');
+    const baseURL = this.config.get<string>('STRAPI_URL', 'http://localhost:5029');
     this.client = axios.create({
       baseURL: `${baseURL}/api`,
       headers: {
@@ -76,3 +76,4 @@ export class StrapiAdapter extends CmsPort {
     };
   }
 }
+

@@ -4,7 +4,7 @@ export interface DxpConfig {
 }
 
 let config: DxpConfig = {
-  bffUrl: 'http://localhost:8000/api/v1',
+  bffUrl: 'http://localhost:5026/api/v1',
   getAccessToken: async () => null,
 };
 
@@ -41,3 +41,4 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   if (response.status === 204) return undefined as T;
   return response.json();
 }
+

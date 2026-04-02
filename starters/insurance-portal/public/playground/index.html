@@ -64,7 +64,7 @@ let cur = 'CMS';
 let curTab = 'try';
 const M = [
   { name:'CMS', desc:'Content management — pages, articles, FAQs.', port:'CmsPort', env:'CMS_ADAPTER', portCode:'abstract class CmsPort {\n  abstract getContent(type: string, id: string): Promise<CmsContent>;\n  abstract listContent(type: string, query: CmsContentQuery): Promise<CmsContentList>;\n  abstract createContent(type: string, data: CreateContentDto): Promise<CmsContent>;\n  abstract publishContent(type: string, id: string): Promise<void>;\n  abstract deleteContent(type: string, id: string): Promise<void>;\n}',
-    adapters:[{name:'StrapiAdapter',env:'strapi',desc:'Connects to Strapi v4+ REST API.',cfg:'STRAPI_URL=http://localhost:1337\nSTRAPI_API_TOKEN=your-api-token'},{name:'PayloadAdapter',env:'payload',desc:'Connects to Payload CMS REST API.',cfg:'PAYLOAD_URL=http://localhost:3001'}],
+    adapters:[{name:'StrapiAdapter',env:'strapi',desc:'Connects to Strapi v4+ REST API.',cfg:'STRAPI_URL=http://localhost:5029\nSTRAPI_API_TOKEN=your-api-token'},{name:'PayloadAdapter',env:'payload',desc:'Connects to Payload CMS REST API.',cfg:'PAYLOAD_URL=http://localhost:5030'}],
     eps:[{m:'GET',p:'/cms/articles',d:'List content'},{m:'GET',p:'/cms/articles/1',d:'Get by ID'},{m:'POST',p:'/cms/articles',d:'Create',b:'{\n  "type": "article",\n  "title": "New FAQ",\n  "body": {"content": "..."}\n}'},{m:'DELETE',p:'/cms/articles/1',d:'Delete'}],
     sdk:'import { useCms, useCmsItem, useCmsCreate } from \'@dxp/sdk-react\';\n\nconst { data } = useCms(\'articles\', { page: 1 });\nconst { data: article } = useCmsItem(\'articles\', \'123\');\nconst create = useCmsCreate(\'articles\');\ncreate.mutate({ title: \'New FAQ\', body: { content: \'...\' } });',
     setup:'1. Set CMS_ADAPTER=strapi in .env\n2. Set STRAPI_URL to your Strapi instance\n3. Generate API token in Strapi admin\n4. Set STRAPI_API_TOKEN in .env\n5. Restart BFF\n\nSwitch to Payload: CMS_ADAPTER=payload, set PAYLOAD_URL. Zero code changes.' },
@@ -89,7 +89,7 @@ const M = [
     sdk:'import { useDocuments, useDocumentUpload } from \'@dxp/sdk-react\';\n\nconst { data } = useDocuments(\'claims\');\nconst upload = useDocumentUpload();\nupload.mutate({ name: \'photo.jpg\', category: \'claims\', mimeType: \'image/jpeg\', data: base64 });',
     setup:'1. Set DOCUMENT_PROVIDER=s3\n2. Configure S3 credentials\n3. Documents stored with tenant-scoped prefixes\n4. Endpoints auto-scope to authenticated tenant' },
   { name:'Identity', desc:'User profile management via Keycloak.', port:'IdentityPort', env:'default (Keycloak)', portCode:'abstract class IdentityPort {\n  abstract getUser(userId): Promise<UserProfile>;\n  abstract listUsers(tenantId, page?, pageSize?): Promise<{data, total}>;\n  abstract updateUser(userId, dto): Promise<UserProfile>;\n  abstract resetPassword(userId): Promise<void>;\n}',
-    adapters:[{name:'KeycloakAdminAdapter',env:'default',desc:'Keycloak Admin REST API for user management.',cfg:'KEYCLOAK_URL=http://localhost:8080\nKEYCLOAK_REALM=dxp'}],
+    adapters:[{name:'KeycloakAdminAdapter',env:'default',desc:'Keycloak Admin REST API for user management.',cfg:'KEYCLOAK_URL=http://localhost:5025\nKEYCLOAK_REALM=dxp'}],
     eps:[{m:'GET',p:'/identity/me',d:'Current user'},{m:'GET',p:'/identity/users',d:'List tenant users'},{m:'PUT',p:'/identity/users/user-123',d:'Update profile',b:'{"firstName":"Sarah","lastName":"Thompson"}'},{m:'POST',p:'/identity/users/user-123/reset-password',d:'Reset password'}],
     sdk:'import { useAuth } from \'@dxp/sdk-react\';\n\nconst { user, isAuthenticated } = useAuth();\n// user.email, user.firstName, user.roles, user.tenantId',
     setup:'1. Keycloak already configured\n2. BFF service account has realm-management permissions\n3. /identity/me reads from JWT\n4. /identity/users requires portal-admin role' },
@@ -137,7 +137,7 @@ function render(){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
       <div class="card"><div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center;">Request <button onclick="send()" style="background:var(--brand);color:#fff;border:none;border-radius:var(--radius);padding:0.25rem 0.75rem;font-size:0.6875rem;font-weight:600;cursor:pointer;">Send</button></div>
-        <div style="padding:1rem;"><div style="margin-bottom:0.5rem;"><span class="badge ${bclass(m.eps[selEpIdx].m)}">${m.eps[selEpIdx].m}</span> <code style="font-size:0.75rem;">localhost:4201/api/v1${m.eps[selEpIdx].p}</code></div>
+        <div style="padding:1rem;"><div style="margin-bottom:0.5rem;"><span class="badge ${bclass(m.eps[selEpIdx].m)}">${m.eps[selEpIdx].m}</span> <code style="font-size:0.75rem;">localhost:5021/api/v1${m.eps[selEpIdx].p}</code></div>
         <div style="font-size:0.625rem;margin-bottom:0.5rem;${token?'color:var(--success)':'color:var(--danger)'};font-weight:600;">${token?'Bearer token attached':'No token — login first'}</div>
         ${m.eps[selEpIdx].b?`<textarea id="req-body" rows="8" style="width:100%;border:1px solid var(--border);border-radius:var(--radius);background:var(--border-lt);padding:0.75rem;font-family:monospace;font-size:0.6875rem;">${esc(m.eps[selEpIdx].b)}</textarea>`:''}</div></div>
       <div class="card"><div class="card-hdr">Response</div><div style="padding:1rem;"><pre id="resp" class="code">// Click "Send" to see the response</pre></div></div>
@@ -176,7 +176,7 @@ async function send(){
   if(token) headers['Authorization']='Bearer '+token;
   const opts={method:ep.m,headers};
   if(ep.b&&(ep.m==='POST'||ep.m==='PUT')){ const el=document.getElementById('req-body'); if(el) opts.body=el.value; }
-  try{ const r=await fetch('http://localhost:4201/api/v1'+ep.p,opts); const d=await r.json().catch(()=>r.text()); document.getElementById('resp').textContent=JSON.stringify(d,null,2); }
+  try{ const r=await fetch('http://localhost:5021/api/v1'+ep.p,opts); const d=await r.json().catch(()=>r.text()); document.getElementById('resp').textContent=JSON.stringify(d,null,2); }
   catch(e){ document.getElementById('resp').textContent='Error: '+e.message; }
 }
 
@@ -184,7 +184,7 @@ async function login(){
   const u=document.getElementById('a-user').value, p=document.getElementById('a-pass').value;
   document.getElementById('a-err').style.display='none';
   try{
-    const r=await fetch('http://localhost:8080/realms/dxp/protocol/openid-connect/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'password',client_id:'dxp-shell',username:u,password:p})});
+    const r=await fetch('http://localhost:5025/realms/dxp/protocol/openid-connect/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'password',client_id:'dxp-shell',username:u,password:p})});
     if(!r.ok){const e=await r.json();throw new Error(e.error_description||'Failed');}
     const d=await r.json(); token=d.access_token;
     const pay=JSON.parse(atob(token.split('.')[1]));
@@ -200,3 +200,4 @@ renderSidebar(); render();
 </script>
 </body>
 </html>
+

@@ -68,7 +68,7 @@ FHIR_AUTH_TOKEN=<SMART-on-FHIR token>`,
       {
         title: 'Scenario B — No FHIR server yet',
         detail: 'Keep HAPI FHIR in Docker (already in docker-compose.yml). Write ETL scripts to push legacy data into FHIR format. The seed scripts in apps/bff/src/seed/ are the template.',
-        code: `# docker-compose already includes HAPI FHIR on port 8090
+        code: `# docker-compose already includes HAPI FHIR on port 5028
 make up
 pnpm seed:fhir   # replace faker data with customer extract`,
         tags: ['Legacy mainframe', 'HL7 v2', 'CSV extract'],
@@ -136,7 +136,7 @@ reviewQueue() { ... }`,
         code: `# infra/kong/kong.yml
 services:
   - name: bff
-    url: http://bff:4201
+    url: http://bff:5021
     routes:
       - name: bff-route
         hosts: ["portal.customer.com"]`,

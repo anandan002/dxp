@@ -10,7 +10,7 @@ export class N8nAdapter extends WorkflowPort {
 
   constructor(private config: ConfigService) {
     super();
-    const baseURL = this.config.get<string>('N8N_URL', 'http://localhost:5678');
+    const baseURL = this.config.get<string>('N8N_URL', 'http://localhost:5032');
     this.client = axios.create({
       baseURL: `${baseURL}/api/v1`,
       headers: { 'X-N8N-API-KEY': this.config.get<string>('N8N_API_KEY', ''), 'Content-Type': 'application/json' },
@@ -57,3 +57,4 @@ export class N8nAdapter extends WorkflowPort {
     await this.client.patch(`/workflows/${workflowId}`, { active: false });
   }
 }
+

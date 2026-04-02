@@ -10,7 +10,7 @@ Wrap your app with `DxpProvider`:
 import { DxpProvider } from '@dxp/sdk-react';
 
 <DxpProvider config={{
-  bffUrl: 'http://localhost:8000/api/v1',
+  bffUrl: 'http://localhost:5026/api/v1',
   getAccessToken: async () => localStorage.getItem('token'),
 }}>
   <App />
@@ -82,3 +82,4 @@ const result = await apiFetch('/integrations/salesforce/call', {
   body: JSON.stringify({ method: 'GET', path: '/accounts' }),
 });
 ```
+

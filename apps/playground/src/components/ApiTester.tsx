@@ -20,7 +20,7 @@ export function ApiTester({ module: mod, accessToken }: { module: AdapterModule;
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('try');
-  const [bffUrl] = useState('http://localhost:4201/api/v1');
+  const [bffUrl] = useState('http://localhost:5021/api/v1');
 
   useEffect(() => {
     setSelectedEndpoint(mod.endpoints[0]);
@@ -210,3 +210,4 @@ export function ApiTester({ module: mod, accessToken }: { module: AdapterModule;
     </div>
   );
 }
+

@@ -7,7 +7,7 @@ import { passportJwtSecret } from 'jwks-rsa';
 @Injectable()
 export class KeycloakJwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
-    const keycloakUrl = configService.get<string>('KEYCLOAK_URL', 'http://localhost:8080');
+    const keycloakUrl = configService.get<string>('KEYCLOAK_URL', 'http://localhost:5025');
     const realm = configService.get<string>('KEYCLOAK_REALM', 'dxp');
     const issuerUrl = `${keycloakUrl}/realms/${realm}`;
 
@@ -36,3 +36,4 @@ export class KeycloakJwtStrategy extends PassportStrategy(Strategy) {
     };
   }
 }
+

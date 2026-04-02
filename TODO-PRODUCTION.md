@@ -8,7 +8,7 @@ Items identified by automated security scan and code review. Not needed for POC/
 
 - [ ] **Add Helmet security headers** — `pnpm add helmet` then `app.use(helmet())` in `main.ts`
 - [ ] **Gate Swagger on NODE_ENV** — only expose `/api/docs` when `NODE_ENV !== 'production'`
-- [ ] **Bind Kong admin to localhost** — change `8001:8001` to `127.0.0.1:8001:8001` in docker-compose
+- [ ] **Bind Kong admin to localhost** — change `5027:8001` to `127.0.0.1:5027:8001` in docker-compose
 - [ ] **Parameterize Keycloak start mode** — `${KC_START_MODE:-start-dev}` in docker-compose
 - [ ] **SSRF protection in integration proxy** — validate `request.path` (no `..`), strip `Host`/`Authorization`/`Cookie` headers
 - [ ] **SQL injection prevention in search** — allowlist `table` parameter against known searchable tables
@@ -19,7 +19,7 @@ Items identified by automated security scan and code review. Not needed for POC/
   - Notifications send/sendBulk → `@Roles('portal-admin')` + validate recipient
   - Storage operations → tenant-prefix keys, validate no path traversal
 - [ ] **Log auth failures in RolesGuard** — add Logger, log userId + requested roles on denial
-- [ ] **CORS from env var** — `origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:4200']`
+- [ ] **CORS from env var** — `origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5020']`
 
 ### Medium Priority
 
@@ -54,3 +54,4 @@ Items identified by automated security scan and code review. Not needed for POC/
 - [ ] **Add focus trap + Escape key to DetailPanel** — use `@radix-ui/react-dialog`
 - [ ] **Use row ID as React key in DataTable** — not array index
 - [ ] **Add `screen_*.png` to .gitignore**
+

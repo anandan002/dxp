@@ -37,7 +37,7 @@ A complete sample portal demonstrating all DXP features. Built for an insurance 
 ```bash
 cd starters/insurance-portal
 pnpm dev
-# Open http://localhost:4200
+# Open http://localhost:5020
 ```
 
 ## Tech Stack
@@ -54,3 +54,4 @@ pnpm dev
 2. Update brand colors in `tailwind.config.js`
 3. Modify page content to match client's policy/claims terminology
 4. Add Keycloak JS adapter for real authentication
+

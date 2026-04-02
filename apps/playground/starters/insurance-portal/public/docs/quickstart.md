@@ -37,8 +37,8 @@ Kong:       UP
 cd apps/bff && pnpm start:dev
 ```
 
-- BFF API: http://localhost:4201/api/v1
-- Swagger Docs: http://localhost:4201/api/docs
+- BFF API: http://localhost:5021/api/v1
+- Swagger Docs: http://localhost:5021/api/docs
 
 ## Run the Insurance Portal (demo)
 
@@ -46,7 +46,7 @@ cd apps/bff && pnpm start:dev
 cd starters/insurance-portal && pnpm dev
 ```
 
-Open http://localhost:4200
+Open http://localhost:5020
 
 ## Start a New Engagement
 
@@ -64,8 +64,9 @@ pnpm dev
 
 ## Keycloak Admin
 
-- URL: http://localhost:8080
+- URL: http://localhost:5025
 - Username: `admin`
 - Password: `admin`
 - DXP Realm: pre-configured with `platform-admin`, `portal-admin`, `portal-user` roles
 - Test users: `admin@dxp.local` / `admin`, `user@acme.local` / `user`
+

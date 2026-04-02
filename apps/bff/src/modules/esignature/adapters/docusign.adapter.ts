@@ -45,7 +45,8 @@ export class DocuSignAdapter extends ESignaturePort {
   }
 
   async getSigningUrl(envelopeId: string, signerEmail: string): Promise<string> {
-    const { data } = await this.client.post(`/envelopes/${envelopeId}/views/recipient`, { email: signerEmail, returnUrl: this.config.get<string>('DOCUSIGN_RETURN_URL', 'http://localhost:4200') });
+    const { data } = await this.client.post(`/envelopes/${envelopeId}/views/recipient`, { email: signerEmail, returnUrl: this.config.get<string>('DOCUSIGN_RETURN_URL', 'http://localhost:5020') });
     return data.url;
   }
 }
+

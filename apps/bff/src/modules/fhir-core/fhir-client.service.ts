@@ -19,7 +19,7 @@ export class FhirClient {
   private readonly baseUrl: string;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = this.config.get<string>('FHIR_BASE_URL', 'http://localhost:8090/fhir');
+    this.baseUrl = this.config.get<string>('FHIR_BASE_URL', 'http://localhost:5028/fhir');
   }
 
   // ── CRUD operations ──────────────────────────────────────────────
@@ -107,3 +107,4 @@ export class FhirClient {
     return HttpStatus.BAD_REQUEST;
   }
 }
+

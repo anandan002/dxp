@@ -41,14 +41,14 @@ export const adapterModules: AdapterModule[] = [
         name: 'StrapiAdapter',
         envValue: 'strapi',
         description: 'Connects to Strapi v4+ REST API. Maps Strapi response format to CmsContent.',
-        config: `STRAPI_URL=http://localhost:1337
+        config: `STRAPI_URL=http://localhost:5029
 STRAPI_API_TOKEN=your-api-token`,
       },
       {
         name: 'PayloadAdapter',
         envValue: 'payload',
         description: 'Connects to Payload CMS REST API. Maps Payload docs format to CmsContent.',
-        config: `PAYLOAD_URL=http://localhost:3001`,
+        config: `PAYLOAD_URL=http://localhost:5030`,
       },
     ],
     envVar: 'CMS_ADAPTER',
@@ -321,7 +321,7 @@ interface UserProfile {
         name: 'KeycloakAdminAdapter',
         envValue: 'default',
         description: 'Uses Keycloak Admin REST API to manage users. Requires a service account with realm-management role.',
-        config: `KEYCLOAK_URL=http://localhost:8080
+        config: `KEYCLOAK_URL=http://localhost:5025
 KEYCLOAK_REALM=dxp
 # BFF uses its service account token to call admin API`,
       },
@@ -437,7 +437,7 @@ For SAP/SOAP: build SapAdapter or SoapAdapter implementing IntegrationPort. The 
         description:
           'Reads/writes FHIR R4 Claim (use=preauthorization) and ClaimResponse. Uses _include=Claim:patient to resolve member names in a single round-trip. Follows the Da Vinci PAS v2.0 IG.',
         config: `PRIOR_AUTH_ADAPTER=davinci-pas
-FHIR_BASE_URL=http://localhost:8090/fhir
+FHIR_BASE_URL=http://localhost:5028/fhir
 FHIR_AUTH_TOKEN=   # optional SMART-on-FHIR bearer token`,
       },
       {
@@ -474,7 +474,7 @@ submit.mutate({ memberId, serviceCode: '27447', urgency: 'routine', ... });
 const { data: queue } = usePAQueue({ urgency: 'urgent' });`,
     setupGuide: `Da Vinci PAS (Prior Authorization Support)
 1. Set PRIOR_AUTH_ADAPTER=davinci-pas
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir
 3. Run "make up" to start HAPI FHIR, then "pnpm seed:fhir" to seed 30 PA requests
 4. Restart BFF — all /prior-auth endpoints now read from HAPI FHIR
 
@@ -505,7 +505,7 @@ Stub mode (no FHIR): set PRIOR_AUTH_ADAPTER=manual-pa`,
         envValue: 'fhir-claim',
         description: 'Queries FHIR R4 ExplanationOfBenefit. Resolves patient via _include. Maps adjudication arrays to billed/allowed/paid amounts.',
         config: `CLAIMS_ADAPTER=fhir-claim
-FHIR_BASE_URL=http://localhost:8090/fhir`,
+FHIR_BASE_URL=http://localhost:5028/fhir`,
       },
       {
         name: 'ManualClaimAdapter',
@@ -534,7 +534,7 @@ const appeal = useAppeal();
 appeal.mutate({ claimId, reason: 'Billing error on service date' });`,
     setupGuide: `FHIR Claims (ExplanationOfBenefit)
 1. Set CLAIMS_ADAPTER=fhir-claim
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir
 3. Run "pnpm seed:fhir" — seeds ~200 ExplanationOfBenefit across 50 patients
 4. Query: GET /claims?memberId=<patient-uuid>
 
@@ -562,7 +562,7 @@ FHIR Resource Mapping:
         envValue: 'fhir-coverage',
         description: 'Reads FHIR Coverage resources for plan details. Uses CoverageEligibilityResponse for real-time eligibility checks.',
         config: `ELIGIBILITY_ADAPTER=fhir-coverage
-FHIR_BASE_URL=http://localhost:8090/fhir`,
+FHIR_BASE_URL=http://localhost:5028/fhir`,
       },
       {
         name: 'ManualEligibilityAdapter',
@@ -591,7 +591,7 @@ const { data: estimate }     = useCostEstimate('27447', memberId);
 // estimate.estimatedCost, estimate.memberResponsibility`,
     setupGuide: `FHIR Eligibility (Coverage)
 1. Set ELIGIBILITY_ADAPTER=fhir-coverage
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir
 3. Run "pnpm seed:fhir" — seeds Coverage for each of 50 patients (HMO, PPO, Medicare Advantage)
 
 FHIR Resource Mapping:
@@ -619,7 +619,7 @@ Provider Eligibility Check:
         envValue: 'fhir-provider',
         description: 'Reads Practitioner + PractitionerRole + Organization from HAPI. Filters by name, specialty, location, network status.',
         config: `PROVIDER_DIR_ADAPTER=fhir-provider
-FHIR_BASE_URL=http://localhost:8090/fhir`,
+FHIR_BASE_URL=http://localhost:5028/fhir`,
       },
       {
         name: 'NppesAdapter',
@@ -680,7 +680,7 @@ Da Vinci PDex Plan Net IG:
         envValue: 'hcc-engine',
         description: 'Computes CMS-HCC v28 RAF scores from FHIR Condition (ICD-10) resources. Generates care gaps and ranks members by risk tier for proactive outreach.',
         config: `RISK_STRAT_ADAPTER=hcc-engine
-FHIR_BASE_URL=http://localhost:8090/fhir
+FHIR_BASE_URL=http://localhost:5028/fhir
 HCC_MODEL_VERSION=v28`,
       },
     ],
@@ -706,7 +706,7 @@ const { data: risk } = useMemberRiskProfile(memberId);
 // risk.rafScore, risk.hccCategories[], risk.tier, risk.careGaps[]`,
     setupGuide: `Risk Stratification (CMS-HCC v28)
 1. Set RISK_STRAT_ADAPTER=hcc-engine
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir
 3. Run "pnpm seed:fhir" — seeds ICD-10 Condition resources for 50 patients.
    The HCC engine computes RAF scores at query time from these Conditions.
 
@@ -720,3 +720,4 @@ Care Gap Logic:
   (e.g. A1c not tested in 12 months, mammogram overdue, colorectal screening missing).`,
   },
 ];
+

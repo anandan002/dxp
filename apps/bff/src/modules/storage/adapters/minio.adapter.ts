@@ -18,7 +18,7 @@ export class MinioAdapter extends StoragePort {
 
   constructor(private config: ConfigService) {
     super();
-    this.endpoint = this.config.get<string>('MINIO_ENDPOINT', 'http://localhost:9000');
+    this.endpoint = this.config.get<string>('MINIO_ENDPOINT', 'http://localhost:5031');
     this.defaultBucket = this.config.get<string>('MINIO_DEFAULT_BUCKET', 'dxp-documents');
     this.accessKey = this.config.get<string>('MINIO_ROOT_USER', 'dxp_minio');
     this.secretKey = this.config.get<string>('MINIO_ROOT_PASSWORD', 'dxp_minio_pass');
@@ -88,3 +88,4 @@ export class MinioAdapter extends StoragePort {
     return [];
   }
 }
+

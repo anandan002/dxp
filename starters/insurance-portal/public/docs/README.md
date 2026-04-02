@@ -25,7 +25,7 @@ DXP eliminates that rework:
 ## Architecture at a Glance
 
 ```
-Browser (localhost:4200)
+Browser (localhost:5020)
     |
     |--- /                    Portal pages (React + @dxp/ui)
     |--- /playground          API explorer with live auth
@@ -33,7 +33,7 @@ Browser (localhost:4200)
     |--- /storybook           Component playground
     |
     v
-NestJS BFF (localhost:4201)   The orchestration layer
+NestJS BFF (localhost:5021)   The orchestration layer
     |
     |--- Auth Module          Keycloak JWT + RBAC
     |--- CMS Module           Port -> Strapi | Payload adapter
@@ -142,10 +142,10 @@ Documentation that's as valuable as the code:
 
 ```bash
 make up       # Start infrastructure (Keycloak + Kong)
-make dev      # Start BFF + Portal on localhost:4200
+make dev      # Start BFF + Portal on localhost:5020
 ```
 
-Open `http://localhost:4200` — you get the Insurance Portal demo with all features working.
+Open `http://localhost:5020` — you get the Insurance Portal demo with all features working.
 
 ### Step 2: Clone the Starter
 
@@ -305,12 +305,12 @@ Copy an existing starter, replace domain-specific data and pages, adjust the the
 
 | Service | URL |
 |---------|-----|
-| Portal + Dev Tools | http://localhost:4200 |
-| API Playground | http://localhost:4200/playground |
-| Documentation | http://localhost:4200/docs |
-| Storybook | http://localhost:4200/storybook |
-| Swagger API Docs | http://localhost:4200/api/docs |
-| Keycloak Admin | http://localhost:8080 |
+| Portal + Dev Tools | http://localhost:5020 |
+| API Playground | http://localhost:5020/playground |
+| Documentation | http://localhost:5020/docs |
+| Storybook | http://localhost:5020/storybook |
+| Swagger API Docs | http://localhost:5020/api/docs |
+| Keycloak Admin | http://localhost:5025 |
 
 | Command | What it does |
 |---------|-------------|
@@ -324,3 +324,4 @@ Copy an existing starter, replace domain-specific data and pages, adjust the the
 |-----------|----------|------|--------|
 | admin@dxp.local | admin | platform-admin | platform |
 | user@acme.local | user | portal-user | acme |
+

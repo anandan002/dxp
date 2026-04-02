@@ -23,7 +23,7 @@ cd client-portal
 # Edit tailwind.config.js — client brand colors
 
 # Develop
-pnpm dev  # http://localhost:4200
+pnpm dev  # http://localhost:5020
 ```
 
 ## Configuration
@@ -31,9 +31,9 @@ pnpm dev  # http://localhost:4200
 ### `src/lib/dxp.ts`
 ```typescript
 export const dxpConfig = {
-  bffUrl: process.env.NEXT_PUBLIC_BFF_URL || 'http://localhost:8000/api/v1',
+  bffUrl: process.env.NEXT_PUBLIC_BFF_URL || 'http://localhost:5026/api/v1',
   keycloak: {
-    url: process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:8080',
+    url: process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:5025',
     realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM || 'dxp',
     clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'dxp-shell',
   },
@@ -65,3 +65,4 @@ pnpm add keycloak-js
 ```
 
 Then configure the DxpProvider's `getAccessToken` to return the Keycloak token.
+

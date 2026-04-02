@@ -1,5 +1,5 @@
 export const SEED_CONFIG = {
-  fhirBaseUrl: process.env.FHIR_BASE_URL || 'http://localhost:8090/fhir',
+  fhirBaseUrl: process.env.FHIR_BASE_URL || 'http://localhost:5028/fhir',
   patientCount: 50,
   claimsPerPatient: { min: 3, max: 8 },
   priorAuthsPerPatient: { min: 0, max: 2 },
@@ -28,3 +28,4 @@ export function randomDate(start: string, end: string): string {
   const e = new Date(end).getTime();
   return new Date(s + Math.random() * (e - s)).toISOString().split('T')[0];
 }
+

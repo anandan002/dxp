@@ -11,16 +11,16 @@ up: ## Start infrastructure (Keycloak + Kong + HAPI FHIR; uses local Postgres & 
 	@echo "\n--- DXP Infrastructure ---"
 	@echo "PostgreSQL:  localhost:5432 (local)"
 	@echo "Redis:       localhost:6379 (local)"
-	@echo "Keycloak:    http://localhost:8080 (admin/admin)"
-	@echo "Kong:        http://localhost:8000"
-	@echo "HAPI FHIR:   http://localhost:8090/fhir"
+	@echo "Keycloak:    http://localhost:5025 (admin/admin)"
+	@echo "Kong:        http://localhost:5026"
+	@echo "HAPI FHIR:   http://localhost:5028/fhir"
 
 down: ## Stop Docker services
 	$(COMPOSE) down
 
-dev: ## Start everything (BFF + Portal on localhost:4200)
-	@echo "Starting BFF on :4201 and Portal on :4200..."
-	@echo "Open http://localhost:4200"
+dev: ## Start everything (BFF + Portal on localhost:5020)
+	@echo "Starting BFF on :5021 and Portal on :5020..."
+	@echo "Open http://localhost:5020"
 	@echo ""
 	@echo "  /              Portal (Dashboard, Policies, Claims, Documents)"
 	@echo "  /playground    API Playground (auth + live API tester)"
@@ -71,11 +71,12 @@ status: ## Check all services
 	@echo "--- Service Health ---"
 	@pg_isready -h localhost -p 5432 > /dev/null 2>&1 && echo "PostgreSQL: UP (local)" || echo "PostgreSQL: DOWN"
 	@redis-cli ping > /dev/null 2>&1 && echo "Redis:      UP (local)" || echo "Redis:      DOWN"
-	@curl -sf http://localhost:8080/realms/dxp > /dev/null 2>&1 && echo "Keycloak:   UP (dxp realm)" || echo "Keycloak:   DOWN"
-	@curl -sf http://localhost:8001/status > /dev/null 2>&1 && echo "Kong:       UP" || echo "Kong:       DOWN"
-	@curl -sf http://localhost:8090/fhir/metadata > /dev/null 2>&1 && echo "HAPI FHIR:  UP (:8090)" || echo "HAPI FHIR:  DOWN"
-	@curl -sf http://localhost:4201/api/v1/health > /dev/null 2>&1 && echo "BFF:        UP (:4201)" || echo "BFF:        DOWN"
-	@curl -sf http://localhost:4200 > /dev/null 2>&1 && echo "Portal:     UP (:4200)" || echo "Portal:     DOWN"
-	@curl -sf http://localhost:4300 > /dev/null 2>&1 && echo "Payer:      UP (:4300)" || echo "Payer:      DOWN"
-	@curl -sf http://localhost:4400 > /dev/null 2>&1 && echo "Playground: UP (:4400)" || echo "Playground: DOWN"
-	@curl -sf http://localhost:4500 > /dev/null 2>&1 && echo "Storybook:  UP (:4500)" || echo "Storybook:  DOWN"
+	@curl -sf http://localhost:5025/realms/dxp > /dev/null 2>&1 && echo "Keycloak:   UP (dxp realm)" || echo "Keycloak:   DOWN"
+	@curl -sf http://localhost:5027/status > /dev/null 2>&1 && echo "Kong:       UP" || echo "Kong:       DOWN"
+	@curl -sf http://localhost:5028/fhir/metadata > /dev/null 2>&1 && echo "HAPI FHIR:  UP (:5028)" || echo "HAPI FHIR:  DOWN"
+	@curl -sf http://localhost:5021/api/v1/health > /dev/null 2>&1 && echo "BFF:        UP (:5021)" || echo "BFF:        DOWN"
+	@curl -sf http://localhost:5020 > /dev/null 2>&1 && echo "Portal:     UP (:5020)" || echo "Portal:     DOWN"
+	@curl -sf http://localhost:5022 > /dev/null 2>&1 && echo "Payer:      UP (:5022)" || echo "Payer:      DOWN"
+	@curl -sf http://localhost:5023 > /dev/null 2>&1 && echo "Playground: UP (:5023)" || echo "Playground: DOWN"
+	@curl -sf http://localhost:5024 > /dev/null 2>&1 && echo "Storybook:  UP (:5024)" || echo "Storybook:  DOWN"
+

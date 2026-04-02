@@ -41,14 +41,14 @@ export const adapterModules: AdapterModule[] = [
         name: 'StrapiAdapter',
         envValue: 'strapi',
         description: 'Connects to Strapi v4+ REST API. Maps Strapi response format to CmsContent.',
-        config: `STRAPI_URL=http://localhost:1337
+        config: `STRAPI_URL=http://localhost:5029
 STRAPI_API_TOKEN=your-api-token`,
       },
       {
         name: 'PayloadAdapter',
         envValue: 'payload',
         description: 'Connects to Payload CMS REST API. Maps Payload docs format to CmsContent.',
-        config: `PAYLOAD_URL=http://localhost:3001`,
+        config: `PAYLOAD_URL=http://localhost:5030`,
       },
     ],
     envVar: 'CMS_ADAPTER',
@@ -321,7 +321,7 @@ interface UserProfile {
         name: 'KeycloakAdminAdapter',
         envValue: 'default',
         description: 'Uses Keycloak Admin REST API to manage users. Requires a service account with realm-management role.',
-        config: `KEYCLOAK_URL=http://localhost:8080
+        config: `KEYCLOAK_URL=http://localhost:5025
 KEYCLOAK_REALM=dxp
 # BFF uses its service account token to call admin API`,
       },
@@ -404,3 +404,4 @@ const accounts = await apiFetch('/integrations/salesforce/call', {
 For SAP/SOAP: build SapAdapter or SoapAdapter implementing IntegrationPort. The port interface stays the same.`,
   },
 ];
+

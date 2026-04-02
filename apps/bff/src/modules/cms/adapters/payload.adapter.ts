@@ -16,7 +16,7 @@ export class PayloadAdapter extends CmsPort {
 
   constructor(private config: ConfigService) {
     super();
-    const baseURL = this.config.get<string>('PAYLOAD_URL', 'http://localhost:3001');
+    const baseURL = this.config.get<string>('PAYLOAD_URL', 'http://localhost:5030');
     this.client = axios.create({
       baseURL: `${baseURL}/api`,
       headers: { 'Content-Type': 'application/json' },
@@ -72,3 +72,4 @@ export class PayloadAdapter extends CmsPort {
     };
   }
 }
+

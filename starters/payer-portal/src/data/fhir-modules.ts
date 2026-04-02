@@ -88,7 +88,7 @@ export const fhirModules: AdapterModule[] = [
         description:
           'Reads/writes FHIR R4 Claim (use=preauthorization) and ClaimResponse resources. Uses _include=Claim:patient to resolve member names in a single round-trip. Follows the Da Vinci PAS v2.0 IG.',
         config: `PRIOR_AUTH_ADAPTER=davinci-pas
-FHIR_BASE_URL=http://localhost:8090/fhir
+FHIR_BASE_URL=http://localhost:5028/fhir
 # Optional SMART-on-FHIR token if payer FHIR server requires auth:
 FHIR_AUTH_TOKEN=`,
       },
@@ -170,7 +170,7 @@ decide.mutate({ id, decision: 'approved', rationale: '...' });`,
     setupGuide: `Da Vinci PAS (Prior Authorization Support)
 ─────────────────────────────────────────
 1. Set PRIOR_AUTH_ADAPTER=davinci-pas in .env
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir (or your payer FHIR endpoint)
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir (or your payer FHIR endpoint)
 3. Run "make up" to start HAPI FHIR server
 4. Run "pnpm seed:fhir" to populate 30 prior auth requests in various states
 5. Restart BFF — all /prior-auth endpoints now read from HAPI FHIR
@@ -230,7 +230,7 @@ For demo/stub mode: set PRIOR_AUTH_ADAPTER=manual-pa. Zero FHIR setup.`,
         description:
           'Queries FHIR R4 ExplanationOfBenefit resources. Resolves patient via _include. Maps adjudication arrays to billed/allowed/paid amounts.',
         config: `CLAIMS_ADAPTER=fhir-claim
-FHIR_BASE_URL=http://localhost:8090/fhir`,
+FHIR_BASE_URL=http://localhost:5028/fhir`,
       },
       {
         name: 'ManualClaimAdapter',
@@ -272,7 +272,7 @@ appeal.mutate({
     setupGuide: `FHIR Claims (ExplanationOfBenefit)
 ──────────────────────────────────
 1. Set CLAIMS_ADAPTER=fhir-claim
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir
 3. Run "pnpm seed:fhir" — seeds ~200 ExplanationOfBenefit resources across 50 patients
 4. Query: GET /claims?memberId=<patient-uuid>
 
@@ -322,7 +322,7 @@ naming conventions so members can export their claims to third-party apps.`,
         description:
           'Reads FHIR Coverage resources for benefits and plan details. Uses CoverageEligibilityResponse for real-time eligibility checks.',
         config: `ELIGIBILITY_ADAPTER=fhir-coverage
-FHIR_BASE_URL=http://localhost:8090/fhir`,
+FHIR_BASE_URL=http://localhost:5028/fhir`,
       },
       {
         name: 'ManualEligibilityAdapter',
@@ -357,7 +357,7 @@ const { data: estimate } = useCostEstimate('27447', memberId);
     setupGuide: `FHIR Eligibility (Coverage)
 ───────────────────────────
 1. Set ELIGIBILITY_ADAPTER=fhir-coverage
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir
 3. Run "pnpm seed:fhir" — seeds Coverage resources for each of the 50 patients
    (HMO, PPO, and Medicare Advantage plans distributed across the population)
 
@@ -407,7 +407,7 @@ Da Vinci PDex integration:
         description:
           'Reads Practitioner + PractitionerRole + Organization resources from HAPI. Supports filtering by name, specialty, location, and network status.',
         config: `PROVIDER_DIR_ADAPTER=fhir-provider
-FHIR_BASE_URL=http://localhost:8090/fhir`,
+FHIR_BASE_URL=http://localhost:5028/fhir`,
       },
       {
         name: 'NppesAdapter',
@@ -444,7 +444,7 @@ const { data: provider } = useProviderDetail(npi);
 ──────────────────
 Option A — Internal FHIR Directory (recommended for health plans):
 1. Set PROVIDER_DIR_ADAPTER=fhir-provider
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir
 3. Run "pnpm seed:fhir" — seeds 100 Practitioner + PractitionerRole + Organization resources
 4. GET /providers/search?specialty=Cardiology
 
@@ -499,7 +499,7 @@ Da Vinci PDex Provider Directory:
         description:
           'Computes CMS-HCC v28 risk scores from FHIR Condition and ExplanationOfBenefit resources. Generates RAF scores, identifies care gaps, and ranks members by risk tier for care manager outreach.',
         config: `RISK_STRAT_ADAPTER=hcc-engine
-FHIR_BASE_URL=http://localhost:8090/fhir
+FHIR_BASE_URL=http://localhost:5028/fhir
 # HCC model version (v24 | v28)
 HCC_MODEL_VERSION=v28`,
       },
@@ -543,7 +543,7 @@ close.mutate({ gapId, closureType: 'documented', notes: '...' });`,
     setupGuide: `Risk Stratification (CMS-HCC)
 ─────────────────────────────
 1. Set RISK_STRAT_ADAPTER=hcc-engine
-2. Set FHIR_BASE_URL=http://localhost:8090/fhir
+2. Set FHIR_BASE_URL=http://localhost:5028/fhir
 3. Run "pnpm seed:fhir" — seeds Condition resources (HCC-mapped ICD-10 codes)
    and links them to the 50 seeded patients. The HCC engine computes RAF scores
    at query time from these Condition resources.
@@ -563,3 +563,4 @@ Population Segmentation:
   members appear first for proactive outreach by care managers.`,
   },
 ];
+

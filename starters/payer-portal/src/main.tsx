@@ -8,7 +8,7 @@ import './index.css';
 // Engagement-specific config
 // In dev, point directly to BFF (bypasses Kong + Keycloak — DEV_AUTH_BYPASS=true in BFF)
 const dxpConfig = {
-  bffUrl: 'http://localhost:4201/api/v1',
+  bffUrl: 'http://localhost:5021/api/v1',
   getAccessToken: async () => null,
 };
 
@@ -32,3 +32,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </React.StrictMode>,
 );
+

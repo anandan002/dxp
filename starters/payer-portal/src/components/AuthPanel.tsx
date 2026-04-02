@@ -14,7 +14,7 @@ interface AuthPanelProps {
   onTokenChange: (token: TokenInfo | null) => void;
 }
 
-const KEYCLOAK_URL = 'http://localhost:8080';
+const KEYCLOAK_URL = 'http://localhost:5025';
 const REALM = 'dxp';
 const CLIENT_ID = 'dxp-shell';
 const TOKEN_URL = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`;
@@ -179,3 +179,4 @@ export function AuthPanel({ token, onTokenChange }: AuthPanelProps) {
     </Card>
   );
 }
+

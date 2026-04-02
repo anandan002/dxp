@@ -2,7 +2,7 @@ _format_version: "3.0"
 
 services:
   - name: dxp-bff
-    url: http://host.docker.internal:4201
+    url: http://host.docker.internal:5021
     routes:
       - name: bff-api
         paths:
@@ -17,7 +17,7 @@ services:
           - OPTIONS
 
   - name: hapi-fhir
-    url: http://host.docker.internal:8090
+    url: http://host.docker.internal:5028
     routes:
       - name: fhir-api
         paths:
@@ -34,9 +34,9 @@ plugins:
   - name: cors
     config:
       origins:
-        - "http://localhost:4200"
-        - "http://localhost:4300"
-        - "http://localhost:3001"
+        - "http://localhost:5020"
+        - "http://localhost:5022"
+        - "http://localhost:5030"
       methods:
         - GET
         - POST
@@ -64,3 +64,4 @@ plugins:
       header_name: X-Request-ID
       generator: uuid
       echo_downstream: true
+

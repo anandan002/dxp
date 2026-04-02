@@ -1,4 +1,13 @@
 packages:
-  - "packages/*"
-  - "apps/*"
-  - "starters/*"
+  - packages/*
+  - apps/*
+  - starters/*
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@parcel/watcher'
+  - '@scarf/scarf'
+  - esbuild
+  - nx
+  - sharp
+  - unrs-resolver

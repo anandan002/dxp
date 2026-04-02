@@ -31,8 +31,8 @@ function App() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', fontSize: '0.75rem', color: 'var(--dxp-text-muted)' }}>
-            <span>BFF: <code style={{ color: 'var(--dxp-brand)' }}>localhost:4201</code></span>
-            <span>Swagger: <a href="http://localhost:4201/api/docs" target="_blank" rel="noreferrer" style={{ color: 'var(--dxp-brand)' }}>docs</a></span>
+            <span>BFF: <code style={{ color: 'var(--dxp-brand)' }}>localhost:5021</code></span>
+            <span>Swagger: <a href="http://localhost:5021/api/docs" target="_blank" rel="noreferrer" style={{ color: 'var(--dxp-brand)' }}>docs</a></span>
           </div>
         </div>
       </header>
@@ -64,3 +64,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </React.StrictMode>,
 );
+

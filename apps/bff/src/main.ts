@@ -22,7 +22,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new RequestContextInterceptor());
 
   app.enableCors({
-    origin: ['http://localhost:4200', 'http://localhost:4400', 'http://localhost:4500', 'http://localhost:4300'],
+    origin: ['http://localhost:5020', 'http://localhost:5023', 'http://localhost:5024', 'http://localhost:5022'],
     credentials: true,
   });
 
@@ -44,9 +44,10 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.BFF_PORT || 4201;
+  const port = process.env.BFF_PORT || 5021;
   await app.listen(port);
   console.log(`DXP BFF running on http://localhost:${port}`);
   console.log(`Swagger docs at http://localhost:${port}/api/docs`);
 }
 bootstrap();
+

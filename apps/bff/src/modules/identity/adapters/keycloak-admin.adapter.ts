@@ -11,7 +11,7 @@ export class KeycloakAdminAdapter extends IdentityPort {
 
   constructor(private config: ConfigService) {
     super();
-    const baseURL = this.config.get<string>('KEYCLOAK_URL', 'http://localhost:8080');
+    const baseURL = this.config.get<string>('KEYCLOAK_URL', 'http://localhost:5025');
     this.realm = this.config.get<string>('KEYCLOAK_REALM', 'dxp');
     this.client = axios.create({ baseURL: `${baseURL}/admin/realms/${this.realm}` });
   }
@@ -48,3 +48,4 @@ export class KeycloakAdminAdapter extends IdentityPort {
     // PUT /users/{id}/execute-actions-email with ["UPDATE_PASSWORD"]
   }
 }
+
