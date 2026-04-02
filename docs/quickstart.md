@@ -1,71 +1,72 @@
 # Quick Start
 
-## Prerequisites
+This quick start is split by operating system and runtime mode.
+
+## Runtime Matrix
+
+| OS | Recommended mode | Infra model |
+|---|---|---|
+| Windows | No-docker local mode | Use local/external infra endpoints; start apps via PowerShell scripts |
+| macOS | Docker flow | Start Keycloak/Kong/HAPI with `make up` |
+| Linux | Docker flow | Start Keycloak/Kong/HAPI with `make up` |
+
+## Common Prerequisites
 
 - Node.js >= 22
-- pnpm >= 10
-- Docker (for Keycloak + Kong)
-- PostgreSQL (local)
-- Redis (local)
+- pnpm >= 10 (via corepack)
+- PostgreSQL local
+- Redis local (optional in no-docker mode)
 
-## Setup
+## 1. Clone and install
 
 ```bash
-# Clone and install
-git clone <repo-url> dxp && cd dxp
+git clone <repo-url> dxp
+cd dxp
 pnpm install
+cp .env.example .env
+```
 
-# Start infrastructure (Keycloak + Kong)
+## 2. Windows (no-docker path)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartPortal -StartPayer -HealthCheck -NodeDir "D:\soft\node-v24.14.0-win-x64"
+```
+
+Notes:
+- Do not use `make` in this path.
+- `-StartFhir` requires Docker; skip it in no-docker mode.
+- For FHIR features, set `FHIR_BASE_URL` to a reachable endpoint.
+
+## 3. macOS/Linux (docker path)
+
+```bash
 make up
-
-# Check everything is healthy
 make status
+make dev
 ```
 
-Expected output:
-```
---- Service Health ---
-PostgreSQL: UP (local)
-Redis:      UP (local)
-Keycloak:   UP (dxp realm)
-Kong:       UP
+## 4. Verify
+
+- Portal: http://localhost:5020
+- BFF API: http://localhost:5021/api/v1
+- Swagger: http://localhost:5021/api/docs
+- Payer portal: http://localhost:5022
+- Keycloak: http://localhost:5025
+- Kong admin: http://localhost:5027
+- HAPI FHIR: http://localhost:5028/fhir
+
+## 5. FHIR Seed
+
+Seed only when `FHIR_BASE_URL` is reachable:
+
+```powershell
+cd apps\bff
+& "D:\soft\node-v24.14.0-win-x64\corepack.cmd" pnpm seed:fhir
 ```
 
-## Run the BFF
+Or on macOS/Linux:
 
 ```bash
-cd apps/bff && pnpm start:dev
+make fhir-seed
 ```
-
-- BFF API: http://localhost:4201/api/v1
-- Swagger Docs: http://localhost:4201/api/docs
-
-## Run the Insurance Portal (demo)
-
-```bash
-cd starters/insurance-portal && pnpm dev
-```
-
-Open http://localhost:4200
-
-## Start a New Engagement
-
-```bash
-# Copy the Next.js starter
-cp -r starters/portal-nextjs my-client-portal
-cd my-client-portal
-
-# Configure for the client
-# Edit src/lib/dxp.ts with client's BFF URL and Keycloak settings
-# Edit tailwind.config.js with client's brand colors
-
-pnpm dev
-```
-
-## Keycloak Admin
-
-- URL: http://localhost:8080
-- Username: `admin`
-- Password: `admin`
-- DXP Realm: pre-configured with `platform-admin`, `portal-admin`, `portal-user` roles
-- Test users: `admin@dxp.local` / `admin`, `user@acme.local` / `user`
