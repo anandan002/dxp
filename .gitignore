@@ -57,3 +57,6 @@ starters/insurance-portal/public/storybook/
 
 # Claude Code local settings
 .claude/settings.local.json
+.tools/
+scripts/check-reserved-terms.mjs
+.github/workflows/reserved-terms.yml

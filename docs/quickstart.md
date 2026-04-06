@@ -35,8 +35,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartP
 
 Notes:
 - Do not use `make` in this path.
-- `-StartFhir` requires Docker; skip it in no-docker mode.
+- `-StartFhir` supports local no-docker mode (Java 17 + PostgreSQL required).
 - For FHIR features, set `FHIR_BASE_URL` to a reachable endpoint.
+- Payer starter defaults to `VITE_BFF_URL=/dxp/api/v1` (works with nginx route `/dxp/api -> BFF`).
+- `DEV_MEMBER_ID` must be a plain UUID (example: `7de24de3-a6ee-464e-88ad-004799281205`), not `DEV_MEMBER_ID=<uuid>`.
 
 ## 3. macOS/Linux (docker path)
 
@@ -70,3 +72,30 @@ Or on macOS/Linux:
 ```bash
 make fhir-seed
 ```
+
+## 6. Windows Redeploy (scripts folder)
+
+Use this when code has changed and you need to republish/restart services:
+
+```powershell
+# 1) Re-apply environment/config if needed
+powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
+
+# 2) Rebuild + publish static portals to nginx
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy-dxp-static.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -NginxHtmlRoot "C:\nginx\html"
+
+# 3) Rebuild + reinstall/restart BFF Windows service
+powershell -ExecutionPolicy Bypass -File .\scripts\install-dxp-bff-service.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -ServiceName "DxpBff" -NssmExe "C:\nssm\win64\nssm.exe" -BuildBff
+
+# 4) Start and verify local FHIR (optional)
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartFhir -NodeDir "D:\soft\node-v24.14.0-win-x64"
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -FhirStatus -NodeDir "D:\soft\node-v24.14.0-win-x64"
+```
+
+## 7. Troubleshooting seeded data not showing in payer portal
+
+If FHIR seed succeeds but `/dxp/payer` still shows fallback/mock data:
+
+1. Fix malformed member id in `.env` (plain UUID only), then restart BFF.
+2. In browser DevTools Console, run `localStorage.removeItem('dxp_dev_member_id')`.
+3. Reload `/dxp/payer` and select a member from the avatar menu.

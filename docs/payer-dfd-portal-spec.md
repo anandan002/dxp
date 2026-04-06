@@ -1,6 +1,6 @@
 # Payer Digital Front Door — Portal Design Specification
 
-> Source: HTC DFD for Payers (March 2026)
+> Source: Client DFD for Payers (March 2026)
 > Target: DXP Delivery Accelerator framework
 > Date: 2026-03-31
 

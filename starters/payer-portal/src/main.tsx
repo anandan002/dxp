@@ -5,14 +5,14 @@ import { ThemeProvider } from '@dxp/ui';
 import { App } from './App';
 import './index.css';
 
-// Engagement-specific config
-// In dev, point directly to BFF (bypasses Kong + Keycloak — DEV_AUTH_BYPASS=true in BFF)
+// Prefer env override. Default works with nginx routing (/dxp/api -> BFF).
+const configuredBffUrl = import.meta.env.VITE_BFF_URL || '/dxp/api/v1';
 const dxpConfig = {
-  bffUrl: 'http://localhost:5021/api/v1',
+  bffUrl: configuredBffUrl,
   getAccessToken: async () => null,
 };
 
-// Healthcare teal brand — change these per engagement. Everything else adapts.
+// Healthcare teal brand: change these per engagement. Everything else adapts.
 const payerTheme = {
   colors: {
     brand: '#0d6e6e',
@@ -32,4 +32,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </React.StrictMode>,
 );
-

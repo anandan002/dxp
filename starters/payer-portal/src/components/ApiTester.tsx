@@ -20,7 +20,7 @@ export function ApiTester({ module: mod, accessToken }: { module: AdapterModule;
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('try');
-  const [bffUrl] = useState('/api/v1');
+  const [bffUrl] = useState(() => import.meta.env.VITE_BFF_URL || '/dxp/api/v1');
 
   useEffect(() => {
     setSelectedEndpoint(mod.endpoints[0]);

@@ -38,8 +38,20 @@ const conditionColumns: Column<Condition>[] = [
   { key: 'lastCaptured', header: 'Last Captured', width: '130px', sortable: true },
 ];
 
+const UUID_PATTERN =
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
+
+function getCurrentMemberId(): string {
+  if (typeof localStorage === 'undefined') {
+    return '';
+  }
+  const raw = localStorage.getItem('dxp_dev_member_id');
+  const match = raw?.match(UUID_PATTERN);
+  return match ? match[0].toLowerCase() : '';
+}
+
 export function MemberRiskProfile() {
-  const currentMemberId = (typeof localStorage !== 'undefined' ? localStorage.getItem('dxp_dev_member_id') : null) || '';
+  const currentMemberId = getCurrentMemberId();
   const { data: liveRisk } = useMemberRiskProfile(currentMemberId);
   const { data: liveProfile } = useMemberProfile();
 

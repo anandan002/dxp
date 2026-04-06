@@ -46,6 +46,38 @@ import { QualityDashboard } from './pages/internal/QualityDashboard';
 
 type PortalMode = 'member' | 'provider' | 'internal';
 
+const DEV_MEMBER_STORAGE_KEY = 'dxp_dev_member_id';
+const UUID_PATTERN =
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
+
+function normalizeMemberId(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const match = value.match(UUID_PATTERN);
+  return match ? match[0].toLowerCase() : null;
+}
+
+function readStoredMemberId(): string | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+  const normalized = normalizeMemberId(localStorage.getItem(DEV_MEMBER_STORAGE_KEY));
+  if (!normalized) {
+    localStorage.removeItem(DEV_MEMBER_STORAGE_KEY);
+    return null;
+  }
+  localStorage.setItem(DEV_MEMBER_STORAGE_KEY, normalized);
+  return normalized;
+}
+
+function writeStoredMemberId(memberId: string): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  localStorage.setItem(DEV_MEMBER_STORAGE_KEY, memberId);
+}
+
 const memberNav: NavItem[] = [
   { label: 'Dashboard', href: '/' },
   { label: 'Benefits', href: '/benefits' },
@@ -195,21 +227,30 @@ function PortalSwitcher({
 function MemberSwitcher() {
   const { data: members } = useMemberList();
   const qc = useQueryClient();
-  const [selected, setSelected] = useState(() => localStorage.getItem('dxp_dev_member_id') || '');
+  const [selected, setSelected] = useState(() => readStoredMemberId() || '');
 
   useEffect(() => {
-    if (!selected && members && members.length > 0) {
-      const id = localStorage.getItem('dxp_dev_member_id') || members[0].id;
-      setSelected(id);
-      if (!localStorage.getItem('dxp_dev_member_id')) {
-        localStorage.setItem('dxp_dev_member_id', id);
-      }
+    if (!members || members.length === 0) {
+      return;
+    }
+    const storedId = readStoredMemberId();
+    const matchedMemberId = storedId && members.some((m) => m.id === storedId) ? storedId : null;
+    const resolvedMemberId = matchedMemberId || members[0].id;
+    if (selected !== resolvedMemberId) {
+      setSelected(resolvedMemberId);
+    }
+    if (storedId !== resolvedMemberId) {
+      writeStoredMemberId(resolvedMemberId);
     }
   }, [members, selected]);
 
   const handleChange = (id: string) => {
-    setSelected(id);
-    localStorage.setItem('dxp_dev_member_id', id);
+    const normalized = normalizeMemberId(id);
+    if (!normalized) {
+      return;
+    }
+    setSelected(normalized);
+    writeStoredMemberId(normalized);
     // Invalidate all member/care/claim queries so pages re-fetch for new member
     qc.invalidateQueries();
   };

@@ -17,6 +17,54 @@ function Write-Step {
   Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
+function Write-Info {
+  param([string]$Message)
+  Write-Host "  - $Message" -ForegroundColor Gray
+}
+
+function Invoke-Nssm {
+  param(
+    [string[]]$NssmArgs,
+    [switch]$AllowNonZeroExit
+  )
+
+  $output = & $NssmExe @NssmArgs 2>&1
+  $exitCode = $LASTEXITCODE
+  if (-not $AllowNonZeroExit -and $exitCode -ne 0) {
+    $msg = ($output | Out-String).Trim()
+    if ([string]::IsNullOrWhiteSpace($msg)) {
+      $msg = "nssm failed with exit code $exitCode."
+    }
+    throw $msg
+  }
+  return [pscustomobject]@{
+    ExitCode = $exitCode
+    Output   = (($output | Out-String).Trim())
+  }
+}
+
+function Test-ServiceExists {
+  param([string]$Name)
+  return [bool](Get-Service -Name $Name -ErrorAction SilentlyContinue)
+}
+
+function Wait-ServiceRemoval {
+  param(
+    [string]$Name,
+    [int]$MaxAttempts = 40,
+    [int]$DelaySeconds = 1
+  )
+
+  for ($i = 1; $i -le $MaxAttempts; $i++) {
+    if (-not (Test-ServiceExists -Name $Name)) {
+      return $true
+    }
+    Start-Sleep -Seconds $DelaySeconds
+  }
+
+  return $false
+}
+
 function Invoke-PnpmAt {
   param(
     [string]$WorkingDir,
@@ -70,25 +118,61 @@ if (-not $entry) {
 Write-Step "Installing/Updating NSSM service '$ServiceName'"
 $existingService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if ($existingService) {
-  & $NssmExe remove $ServiceName confirm | Out-Null
+  Write-Info "Stopping existing service '$ServiceName'."
+  try {
+    Stop-Service -Name $ServiceName -Force -ErrorAction Stop
+  } catch {
+    Write-Info "Stop-Service failed for '$ServiceName' ($($_.Exception.Message)). Continuing with remove."
+  }
+
+  Write-Info "Removing existing service '$ServiceName'."
+  $removeResult = Invoke-Nssm -NssmArgs @("remove", $ServiceName, "confirm") -AllowNonZeroExit
+  if ($removeResult.ExitCode -ne 0 -and $removeResult.Output -notmatch "does not exist") {
+    throw "Failed to remove existing service '$ServiceName'. $($removeResult.Output)"
+  }
+
+  if (-not (Wait-ServiceRemoval -Name $ServiceName -MaxAttempts 60 -DelaySeconds 1)) {
+    throw "Service '$ServiceName' is still present (likely marked for deletion). Close any Service Manager handles and retry."
+  }
 }
 
 $psExe = "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 $appArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$startScript`" -NodeDir `"$NodeDir`" -RepoRoot `"$RepoRoot`""
 
-& $NssmExe install $ServiceName $psExe $appArgs | Out-Null
-& $NssmExe set $ServiceName AppDirectory $bffDir | Out-Null
-& $NssmExe set $ServiceName Start SERVICE_AUTO_START | Out-Null
-& $NssmExe set $ServiceName AppExit Default Restart | Out-Null
-& $NssmExe set $ServiceName AppRestartDelay 5000 | Out-Null
-& $NssmExe set $ServiceName AppStdout (Join-Path $logsDir "service-stdout.log") | Out-Null
-& $NssmExe set $ServiceName AppStderr (Join-Path $logsDir "service-stderr.log") | Out-Null
+$installed = $false
+for ($attempt = 1; $attempt -le 5; $attempt++) {
+  try {
+    Invoke-Nssm -NssmArgs @("install", $ServiceName, $psExe) | Out-Null
+    $installed = $true
+    break
+  } catch {
+    $msg = $_.Exception.Message
+    if ($msg -match "marked for deletion" -and $attempt -lt 5) {
+      Write-Info "Service still marked for deletion. Retry $attempt/5 after wait..."
+      Start-Sleep -Seconds 2
+      continue
+    }
+    throw "Failed to install service '$ServiceName'. $msg"
+  }
+}
+
+if (-not $installed) {
+  throw "Failed to install service '$ServiceName' after retries."
+}
+
+Invoke-Nssm -NssmArgs @("set", $ServiceName, "AppParameters", $appArgs) | Out-Null
+Invoke-Nssm -NssmArgs @("set", $ServiceName, "AppDirectory", $bffDir) | Out-Null
+Invoke-Nssm -NssmArgs @("set", $ServiceName, "Start", "SERVICE_AUTO_START") | Out-Null
+Invoke-Nssm -NssmArgs @("set", $ServiceName, "AppExit", "Default", "Restart") | Out-Null
+Invoke-Nssm -NssmArgs @("set", $ServiceName, "AppRestartDelay", "5000") | Out-Null
+Invoke-Nssm -NssmArgs @("set", $ServiceName, "AppStdout", (Join-Path $logsDir "service-stdout.log")) | Out-Null
+Invoke-Nssm -NssmArgs @("set", $ServiceName, "AppStderr", (Join-Path $logsDir "service-stderr.log")) | Out-Null
 
 if ($ServiceUser -ne "LocalSystem") {
   if ([string]::IsNullOrWhiteSpace($ServicePassword)) {
     throw "ServicePassword is required when ServiceUser is not LocalSystem."
   }
-  & $NssmExe set $ServiceName ObjectName $ServiceUser $ServicePassword | Out-Null
+  Invoke-Nssm -NssmArgs @("set", $ServiceName, "ObjectName", $ServiceUser, $ServicePassword) | Out-Null
 }
 
 Write-Step "Starting service '$ServiceName'"

@@ -21,7 +21,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartP
 
 Notes:
 - Windows path is script-first; `make` is not required.
-- `-StartFhir` requires Docker. In no-docker Windows mode, use external/manual FHIR and set `FHIR_BASE_URL` in `.env`.
+- `-StartFhir` runs local HAPI FHIR without Docker (Java 17 + local PostgreSQL required).
 
 ### macOS/Linux (docker flow)
 
@@ -82,8 +82,26 @@ make dev
 # Start app processes
 powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartPortal -StartPayer -NodeDir "D:\soft\node-v24.14.0-win-x64"
 
+# Start/stop local HAPI FHIR (no Docker)
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartFhir -NodeDir "D:\soft\node-v24.14.0-win-x64"
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -FhirStatus -NodeDir "D:\soft\node-v24.14.0-win-x64"
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StopFhir -NodeDir "D:\soft\node-v24.14.0-win-x64"
+
 # Optional checks
 powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -HealthCheck -NodeDir "D:\soft\node-v24.14.0-win-x64"
+```
+
+### Windows Redeploy (scripts folder)
+
+```powershell
+# Re-apply env/config if needed
+powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
+
+# Rebuild + publish insurance/payer static assets to nginx
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy-dxp-static.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -NginxHtmlRoot "C:\nginx\html"
+
+# Rebuild + reinstall/restart BFF as Windows service
+powershell -ExecutionPolicy Bypass -File .\scripts\install-dxp-bff-service.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -ServiceName "DxpBff" -NssmExe "C:\nssm\win64\nssm.exe" -BuildBff
 ```
 
 ### macOS/Linux

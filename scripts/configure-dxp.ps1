@@ -853,7 +853,11 @@ $envContent = @"
 # --- Core Platform ---
 BFF_PORT=$($ports.BFF)
 DEV_AUTH_BYPASS=false
-DEV_MEMBER_ID=dev-member
+DEV_MEMBER_ID=7de24de3-a6ee-464e-88ad-004799281205
+
+# --- Frontend ---
+VITE_ALLOWED_HOSTS=localhost,127.0.0.1
+VITE_BFF_URL=/dxp/api/v1
 
 # --- PostgreSQL ---
 POSTGRES_USER=$postgresUser
@@ -984,22 +988,24 @@ if (Read-YesNo -Prompt "Create PostgreSQL database '$postgresDb' if missing?" -D
 Write-Step "Done"
 Write-Host "Next steps:" -ForegroundColor Green
 Write-Host "  1) Run all via script: powershell -ExecutionPolicy Bypass -File .\\scripts\\run-dxp.ps1 -All -NodeDir '$NodeDir'" -ForegroundColor Gray
-Write-Host "  2) Start FHIR:        powershell -ExecutionPolicy Bypass -File .\\scripts\\run-dxp.ps1 -StartFhir -NodeDir '$NodeDir'" -ForegroundColor Gray
-Write-Host "  3) Seed FHIR:         powershell -ExecutionPolicy Bypass -File .\\scripts\\run-dxp.ps1 -SeedFhir -NodeDir '$NodeDir'" -ForegroundColor Gray
-Write-Host "  4) Start BFF:         cd apps\\bff; pnpm start:dev" -ForegroundColor Gray
-Write-Host "  5) Start Portal:      cd starters\\insurance-portal; pnpm dev" -ForegroundColor Gray
-Write-Host "  6) Start Payer:       cd starters\\payer-portal; pnpm dev" -ForegroundColor Gray
-Write-Host "  7) Optional checks:   curl http://localhost:$($ports.BFF)/api/v1/health" -ForegroundColor Gray
+Write-Host "  2) Start FHIR local:  powershell -ExecutionPolicy Bypass -File .\\scripts\\run-dxp.ps1 -StartFhir -NodeDir '$NodeDir'" -ForegroundColor Gray
+Write-Host "  3) FHIR status:       powershell -ExecutionPolicy Bypass -File .\\scripts\\run-dxp.ps1 -FhirStatus -NodeDir '$NodeDir'" -ForegroundColor Gray
+Write-Host "  4) Seed FHIR:         powershell -ExecutionPolicy Bypass -File .\\scripts\\run-dxp.ps1 -SeedFhir -NodeDir '$NodeDir'" -ForegroundColor Gray
+Write-Host "  5) Stop FHIR:         powershell -ExecutionPolicy Bypass -File .\\scripts\\run-dxp.ps1 -StopFhir -NodeDir '$NodeDir'" -ForegroundColor Gray
+Write-Host "  6) Start BFF:         cd apps\\bff; pnpm start:dev" -ForegroundColor Gray
+Write-Host "  7) Start Portal:      cd starters\\insurance-portal; pnpm dev" -ForegroundColor Gray
+Write-Host "  8) Start Payer:       cd starters\\payer-portal; pnpm dev" -ForegroundColor Gray
+Write-Host "  9) Optional checks:   curl http://localhost:$($ports.BFF)/api/v1/health" -ForegroundColor Gray
 if ($script:PnpmCmd) {
-  Write-Host "  8) Approve builds:    & '$script:PnpmCmd' approve-builds" -ForegroundColor Gray
+  Write-Host " 10) Approve builds:    & '$script:PnpmCmd' approve-builds" -ForegroundColor Gray
 } else {
-  Write-Host "  8) Approve builds:    & '$script:CorepackCmd' pnpm approve-builds" -ForegroundColor Gray
+  Write-Host " 10) Approve builds:    & '$script:CorepackCmd' pnpm approve-builds" -ForegroundColor Gray
 }
 Write-Host ""
 Write-Host "Local URLs (current configured ports):" -ForegroundColor Green
 Write-Host "  Portal:      http://localhost:$($ports.PORTAL)" -ForegroundColor Gray
 Write-Host "  BFF:         http://localhost:$($ports.BFF)/api/v1" -ForegroundColor Gray
 Write-Host "  Payer:       http://localhost:$($ports.PAYER) (run starters\\payer-portal to enable)" -ForegroundColor Gray
-Write-Host "  HAPI FHIR:   http://localhost:$($ports.FHIR)/fhir (start via run-dxp.ps1 -StartFhir)" -ForegroundColor Gray
+Write-Host "  HAPI FHIR:   http://localhost:$($ports.FHIR)/fhir (local Java, start via run-dxp.ps1 -StartFhir)" -ForegroundColor Gray
 Write-Host "  Keycloak:    http://localhost:$($ports.KEYCLOAK)" -ForegroundColor Gray
-Write-Host "  Note: Kong/HAPI/Redis are not provisioned by this script." -ForegroundColor Gray
+Write-Host "  Note: Kong/Redis are not provisioned by this script." -ForegroundColor Gray

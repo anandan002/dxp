@@ -102,6 +102,19 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartP
 powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -HealthCheck -ApproveBuilds -NodeDir "D:\soft\node-v24.14.0-win-x64"
 ```
 
+### Windows Redeploy (scripts folder)
+
+```powershell
+# Re-apply env/config if needed
+powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
+
+# Rebuild + publish insurance/payer static assets to nginx
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy-dxp-static.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -NginxHtmlRoot "C:\nginx\html"
+
+# Rebuild + reinstall/restart BFF as Windows service
+powershell -ExecutionPolicy Bypass -File .\scripts\install-dxp-bff-service.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -ServiceName "DxpBff" -NssmExe "C:\nssm\win64\nssm.exe" -BuildBff
+```
+
 ### macOS/Linux (`make`)
 
 ```bash

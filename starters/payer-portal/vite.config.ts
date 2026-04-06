@@ -62,6 +62,11 @@ export default defineConfig({
     port: 5022,
     allowedHosts: getAllowedHosts(),
     proxy: {
+      '/dxp/api': {
+        target: 'http://localhost:5021',
+        changeOrigin: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/dxp\/api/, '/api'),
+      },
       '/api': {
         target: 'http://localhost:5021',
         changeOrigin: true,
