@@ -45,7 +45,7 @@ function navForPath(path: string): NavItem[] {
 const devTools = [
   { label: 'API Playground',    href: '/playground',                                         external: false },
   { label: 'Integration Guide', href: '/integration-guide',   external: false },
-  { label: 'Storybook',         href: '/storybook/index.html', external: true },
+  { label: 'Storybook',         href: toPublicUrl('/dxp/storybook/index.html'), external: true },
   { label: 'Swagger',           href: toPublicUrl('/dxp/api/docs'),                          external: true },
   { label: 'Docs',              href: toPublicUrl('/dxp/docs/index.html'),                   external: true },
   { label: 'Payer Portal',      href: toPublicUrl('/dxp/payer'),                             external: true },

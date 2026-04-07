@@ -4,35 +4,28 @@ A delivery accelerator for building enterprise portals with a shared BFF, UI lib
 
 ## Platform Support
 
-| OS | Recommended Local Mode | Notes |
+| OS | Recommended Local Mode | Deployment Mode |
 |---|---|---|
-| Windows | No-docker local mode | Script-first flow using PowerShell; `make` is not required. |
-| macOS | Docker flow | Use `make up` / `make dev` for infra + app startup. |
-| Linux | Docker flow | Use `make up` / `make dev` for infra + app startup. |
+| Windows | Script-first, no-docker | Windows services + nginx static |
+| macOS | Docker-first | Docker compose + nginx/static hosting |
+| Linux | Docker-first | Docker compose + nginx/static hosting |
 
 ## Prerequisites
 
-| Tool | Version | Windows | macOS | Linux |
-|---|---|---|---|---|
-| Node.js | >= 22 | Use custom Node path (example used here: `D:\soft\node-v24.14.0-win-x64`) | Install via Homebrew/nvm | Install via distro package/nvm |
-| pnpm | >= 10 | Use `corepack` from the same Node path | `corepack enable` | `corepack enable` |
-| PostgreSQL | >= 16 | Local service | Local service | Local service |
-| Redis | >= 7 | Optional in no-docker mode | Local service | Local service |
-| Docker | latest | Optional | Required for docker flow | Required for docker flow |
+| Tool | Version | Notes |
+|---|---|---|
+| Node.js | >= 22 | Windows: use `-NodeDir`; macOS/Linux: `nvm` or system package |
+| pnpm | >= 10 | Use `corepack` |
+| PostgreSQL | >= 16 | Required for BFF + local HAPI |
+| Java | >= 17 | Required only for Windows local HAPI no-docker flow |
+| Docker | latest | Required for docker-first macOS/Linux flow |
 
 ## Quick Start
 
-### 1. Clone and install
-
 ```bash
-git clone https://github.com/beedev/dxp.git
+git clone <repo-url> dxp
 cd dxp
 pnpm install
-```
-
-### 2. Configure environment
-
-```bash
 cp .env.example .env
 ```
 
@@ -40,26 +33,20 @@ Set at least:
 
 ```env
 POSTGRES_USER=dxp
-POSTGRES_PASSWORD=<your-password-or-empty>
+POSTGRES_PASSWORD=<password>
 POSTGRES_DB=dxp
+VITE_BFF_URL=/dxp/api/v1
 FHIR_BASE_URL=http://localhost:5028/fhir
 ```
 
-### 3. Start by OS
-
-#### Windows (no-docker, script-first)
+### Windows (No-Docker, Script-First)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
 powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartPortal -StartPayer -HealthCheck -NodeDir "D:\soft\node-v24.14.0-win-x64"
 ```
 
-Windows notes:
-- `make` commands are not used in this path.
-- `-StartFhir` needs Docker. In no-docker mode, use an external/manual FHIR endpoint.
-- Seed command works only when `FHIR_BASE_URL` is reachable.
-
-#### macOS/Linux (docker flow)
+### macOS/Linux (Docker-First)
 
 ```bash
 make up
@@ -67,14 +54,18 @@ make status
 make dev
 ```
 
-#### macOS/Linux (no-docker optional flow)
+## Deployment
 
-```bash
-cd apps/bff && pnpm start:dev
-cd starters/insurance-portal && pnpm dev
-```
+Canonical public base path is `/dxp`:
+- Portal: `/dxp/`
+- BFF: `/dxp/api/*` -> `http://localhost:5021/api/*`
+- Payer: `/dxp/payer`
+- Storybook: `/dxp/storybook`
 
-## Local URLs
+For full OS-specific deployment steps (Windows services, Linux `systemd`, macOS `launchd`, nginx publish flow), see:
+- [docs/deployment.md](docs/deployment.md)
+
+## Local URLs (Dev)
 
 | Service | URL |
 |---|---|
@@ -89,79 +80,48 @@ cd starters/insurance-portal && pnpm dev
 
 ## Command Reference
 
-### Windows (PowerShell)
+### Windows
 
 ```powershell
-# Full local setup
-powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64"
+# Configure + install dependencies
+powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
 
 # Start app processes
 powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartPortal -StartPayer -NodeDir "D:\soft\node-v24.14.0-win-x64"
 
-# Optional checks and approvals
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -HealthCheck -ApproveBuilds -NodeDir "D:\soft\node-v24.14.0-win-x64"
+# Local FHIR lifecycle
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartFhir -NodeDir "D:\soft\node-v24.14.0-win-x64"
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -FhirStatus -NodeDir "D:\soft\node-v24.14.0-win-x64"
+powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -SeedFhir -NodeDir "D:\soft\node-v24.14.0-win-x64"
 ```
 
-### Windows Redeploy (scripts folder)
-
-```powershell
-# Re-apply env/config if needed
-powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
-
-# Rebuild + publish insurance/payer static assets to nginx
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy-dxp-static.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -NginxHtmlRoot "C:\nginx\html"
-
-# Rebuild + reinstall/restart BFF as Windows service
-powershell -ExecutionPolicy Bypass -File .\scripts\install-dxp-bff-service.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -ServiceName "DxpBff" -NssmExe "C:\nssm\win64\nssm.exe" -BuildBff
-```
-
-### macOS/Linux (`make`)
+### macOS/Linux
 
 ```bash
-make up              # Start infra (Keycloak + Kong + HAPI FHIR via docker compose)
-make dev             # Start BFF + portal
-make dev-bff         # Start BFF only
-make dev-portal      # Start portal only
-make status          # Health check services
-make down            # Stop docker services
-make fhir-seed       # Seed FHIR data
-make fhir-reset      # Reset + reseed FHIR
-make build-storybook # Rebuild Storybook static
+make up
+make dev
+make status
+make down
+make fhir-seed
 ```
 
 ## Troubleshooting
 
 ### Windows: `make` is not recognized
 
-Use PowerShell scripts instead:
+Use `scripts/configure-dxp.ps1` and `scripts/run-dxp.ps1` instead of `make`.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartPortal -NodeDir "D:\soft\node-v24.14.0-win-x64"
-```
+### Seed fails with `fetch failed`
 
-### Windows: pnpm uses wrong Node version
+`FHIR_BASE_URL` is unreachable:
 
-Use NodeDir-based commands:
-
-```powershell
-& "D:\soft\node-v24.14.0-win-x64\corepack.cmd" pnpm --version
-```
-
-### FHIR seed fails with `fetch failed`
-
-`FHIR_BASE_URL` is unreachable.
-
-Check:
-
-```powershell
+```bash
 curl http://localhost:5028/fhir/metadata
 ```
 
-If running no-docker Windows mode, point `FHIR_BASE_URL` to an external/manual FHIR endpoint.
-
 ### BFF health returns 500
 
-`/api/v1/health` checks upstream dependencies (for example Keycloak). Verify related URLs and credentials in `.env`.
+`/api/v1/health` checks upstream dependencies (for example Keycloak). Verify `.env` URLs and credentials.
 
 ## Repository Structure
 

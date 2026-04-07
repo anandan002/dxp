@@ -1502,7 +1502,7 @@ POST /cds-services/care-gap-alert      → care gap hook handler
 ├────────────────────────────────────────────────────────┤
 │                                                         │
 │  React App (payer-portal)  ──► BFF (NestJS)            │
-│        :4200                      :3000                 │
+│        :5022                      :5021                 │
 │                                    │                    │
 │                    ┌───────────────┼───────────────┐   │
 │                    ▼               ▼               ▼   │
@@ -1522,7 +1522,7 @@ POST /cds-services/care-gap-alert      → care gap hook handler
 Add to the DXP docker-compose:
 
 ```yaml
-# infra/docker-compose.fhir.yml
+# .docker/compose/docker-compose.yml
 services:
   hapi-fhir:
     image: hapiproject/hapi:latest
@@ -1538,7 +1538,7 @@ services:
       hapi.fhir.cors.allowed_origins: "*"
       hapi.fhir.subscription.resthook_enabled: "true"
     ports:
-      - "8070:8080"
+      - "5028:8090"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/fhir/metadata"]
       interval: 10s
@@ -1548,7 +1548,7 @@ services:
       - postgres
 ```
 
-**Verify**: `curl http://localhost:8070/fhir/metadata` returns CapabilityStatement.
+**Verify**: `curl http://localhost:5028/fhir/metadata` returns CapabilityStatement.
 
 ### 14.3 Synthea — Synthetic Patient Generator
 
@@ -1838,7 +1838,7 @@ import { generateEOB } from './generators/claims-eob';
 import { generatePriorAuth } from './generators/prior-auth';
 import { generateMeasureReport } from './generators/quality-measures';
 
-const FHIR_BASE = process.env.FHIR_BASE_URL || 'http://localhost:8070/fhir';
+const FHIR_BASE = process.env.FHIR_BASE_URL || 'http://localhost:5028/fhir';
 const POPULATION = 200;
 
 async function seed() {
@@ -1902,18 +1902,18 @@ cd apps/bff && pnpm seed:fhir
 ```makefile
 # Add to project Makefile
 fhir-up:
-	docker-compose -f infra/docker-compose.fhir.yml up -d
-	@echo "HAPI FHIR: http://localhost:8070/fhir/metadata"
+	docker compose up -d
+	@echo "HAPI FHIR: http://localhost:5028/fhir/metadata"
 
 fhir-down:
-	docker-compose -f infra/docker-compose.fhir.yml down
+	docker compose down
 
 fhir-seed:
 	cd apps/bff && pnpm seed:fhir
 
 fhir-reset:
-	docker-compose -f infra/docker-compose.fhir.yml down -v
-	docker-compose -f infra/docker-compose.fhir.yml up -d
+	docker compose down -v
+	docker compose up -d
 	sleep 10
 	cd apps/bff && pnpm seed:fhir
 ```
@@ -1938,7 +1938,7 @@ KEYCLOAK_REALM=payer-portal
 KEYCLOAK_CLIENT_ID=dfd-web
 
 # === FHIR Server ===
-FHIR_BASE_URL=http://localhost:8070/fhir        # local HAPI
+FHIR_BASE_URL=http://localhost:5028/fhir        # local HAPI
 # FHIR_BASE_URL=https://fhir.payer.example.com/r4  # production
 FHIR_AUTH_METHOD=smart-backend
 FHIR_CLIENT_ID=dfd-bff

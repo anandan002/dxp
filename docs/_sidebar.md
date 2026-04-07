@@ -1,6 +1,7 @@
 - **Getting Started**
   - [Overview](/)
   - [Quick Start](quickstart.md)
+  - [Deployment](deployment.md)
   - [Architecture](architecture/overview.md)
 
 - **BFF Adapter Library**

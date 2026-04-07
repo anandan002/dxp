@@ -208,11 +208,17 @@ Even when using the FHIR adapter, some fields cannot come from standard FHIR R4 
 Stop the BFF or point it at nothing:
 
 ```bash
-# Kill BFF
-lsof -ti:4201 | xargs kill -9
+# Linux/macOS: stop BFF running on :5021
+lsof -ti:5021 | xargs kill -9
 
 # Portal will use 100% mock data on every page
 cd starters/payer-portal && pnpm dev
+```
+
+```powershell
+# Windows: stop BFF running on :5021
+Get-NetTCPConnection -LocalPort 5021 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+cd starters\payer-portal; pnpm dev
 ```
 
 Every page still renders. The only visual difference from FHIR mode is member data (names, dates, claim numbers) — the mock uses "James Martinez", the FHIR data uses real seeded names.

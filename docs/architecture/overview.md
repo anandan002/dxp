@@ -1,59 +1,56 @@
 # Architecture Overview
 
-## System Diagram
+## System Diagram (Local)
 
-```
-Browser (4200)
+```text
+Browser (:5020 / :5022)
     |
     v
-Kong Gateway (8000) --- rate limiting, CORS, routing
+Nginx (/dxp, /dxp/payer, /dxp/storybook, /dxp/api)
     |
     v
-NestJS BFF (4201) --- adapter pattern, auth, orchestration
+NestJS BFF (:5021) --- adapter pattern, auth, orchestration
     |
-    +--- Keycloak (8080) --- OIDC auth, RBAC
-    +--- PostgreSQL (5432) --- primary data store
-    +--- Redis (6379) --- cache, sessions
+    +--- Keycloak (:5025) --- OIDC auth, RBAC
+    +--- PostgreSQL (:5432) --- primary data store
+    +--- Redis (:6379, optional in no-docker flow)
+    +--- HAPI FHIR (:5028/fhir)
     +--- [Client Systems] --- via adapter modules
 ```
 
 ## Layers
 
 ### API Gateway (Kong)
-- Declarative config (no database)
-- Rate limiting, CORS, request ID correlation
-- Routes all `/api/v1/*` to the BFF
+- Declarative config (DB-less) for docker-first environments
+- Routing and gateway policies for `/api/v1/*`
 - Config: `infra/kong/kong.yml`
 
 ### Backend for Frontend (NestJS)
-- 9 adapter modules, each with port + adapter pattern
+- Adapter modules using port/adapter pattern
 - Keycloak JWT validation via Passport
 - Role-based access control via `RolesGuard`
 - Swagger/OpenAPI auto-generated
-- Global exception filter with structured error responses
 
 ### Identity (Keycloak)
 - OIDC and SAML 2.0
 - Pre-configured `dxp` realm with roles and test users
-- PKCE flow for browser clients
-- Tenant isolation via `tenant_id` user attribute
 - Config: `infra/keycloak/dxp-realm.json`
 
 ### Frontend
-- `@dxp/ui` — enterprise component library (React + Tailwind)
-- `@dxp/sdk-react` — hooks backed by TanStack Query
-- Starters: Vite (insurance portal) and Next.js (generic)
+- `@dxp/ui`: shared React + Tailwind component library
+- `@dxp/sdk-react`: typed hooks for BFF APIs
+- Starters: insurance portal and payer portal
 
 ## Directory Structure
 
-```
+```text
 dxp/
-  apps/bff/              # NestJS BFF (the core product)
+  apps/bff/              # NestJS BFF
   packages/contracts/    # Shared TypeScript types
   packages/ui/           # Component library (@dxp/ui)
   packages/sdk-react/    # React hooks (@dxp/sdk-react)
-  starters/              # Portal starters (clone per engagement)
-  optional/              # Bring-if-needed (Go services, Kafka)
+  starters/              # Portal starters
   infra/                 # Keycloak realm, Kong config
-  docs/                  # This documentation
+  scripts/               # Windows setup/deploy/service scripts
+  docs/                  # Documentation
 ```

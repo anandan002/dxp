@@ -4,26 +4,22 @@ DXP is a delivery accelerator for enterprise portals: shared BFF adapters, reusa
 
 ## Start Here by OS
 
-| OS | Recommended local mode | Primary startup commands |
+| OS | Recommended local mode | Primary docs |
 |---|---|---|
-| Windows | No-docker mode | `scripts/configure-dxp.ps1`, `scripts/run-dxp.ps1` |
-| macOS | Docker flow | `make up`, `make dev`, `make status` |
-| Linux | Docker flow | `make up`, `make dev`, `make status` |
+| Windows | Script-first, no-docker | [quickstart.md](quickstart.md), [deployment.md](deployment.md) |
+| macOS | Docker-first | [quickstart.md](quickstart.md), [deployment.md](deployment.md) |
+| Linux | Docker-first | [quickstart.md](quickstart.md), [deployment.md](deployment.md) |
 
-## Local Setup Commands
+## Core Setup Commands
 
-### Windows (PowerShell, no-docker)
+### Windows
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
 powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartPortal -StartPayer -HealthCheck -NodeDir "D:\soft\node-v24.14.0-win-x64"
 ```
 
-Notes:
-- Windows path is script-first; `make` is not required.
-- `-StartFhir` runs local HAPI FHIR without Docker (Java 17 + local PostgreSQL required).
-
-### macOS/Linux (docker flow)
+### macOS/Linux
 
 ```bash
 make up
@@ -31,7 +27,15 @@ make status
 make dev
 ```
 
-## URLs
+## Canonical Public Routing
+
+Deploy under `/dxp`:
+- `/dxp/` -> insurance portal
+- `/dxp/api/*` -> BFF (`http://localhost:5021/api/*`)
+- `/dxp/payer` -> payer portal
+- `/dxp/storybook` -> Storybook static
+
+## URLs (Local Dev)
 
 | Service | URL |
 |---|---|
@@ -44,14 +48,11 @@ make dev
 | Kong admin | http://localhost:5027 |
 | HAPI FHIR | http://localhost:5028/fhir |
 
-## Core Concepts
-
-- BFF modules use a port/adapter pattern for provider swaps by environment variable.
-- `@dxp/ui` contains reusable enterprise UI components.
-- `@dxp/sdk-react` exposes typed client hooks for portal apps.
-- Starters provide engagement-ready portal scaffolding.
-
 ## Documentation Map
+
+### Setup and Deployment
+- [quickstart.md](quickstart.md)
+- [deployment.md](deployment.md)
 
 ### Architecture
 - [architecture/overview.md](architecture/overview.md)
@@ -73,44 +74,3 @@ make dev
 - [playbook/adapter-selection.md](playbook/adapter-selection.md)
 - [playbook/tech-approval.md](playbook/tech-approval.md)
 - [playbook/estimation.md](playbook/estimation.md)
-
-## Command Reference
-
-### Windows
-
-```powershell
-# Start app processes
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartPortal -StartPayer -NodeDir "D:\soft\node-v24.14.0-win-x64"
-
-# Start/stop local HAPI FHIR (no Docker)
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartFhir -NodeDir "D:\soft\node-v24.14.0-win-x64"
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -FhirStatus -NodeDir "D:\soft\node-v24.14.0-win-x64"
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StopFhir -NodeDir "D:\soft\node-v24.14.0-win-x64"
-
-# Optional checks
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -HealthCheck -NodeDir "D:\soft\node-v24.14.0-win-x64"
-```
-
-### Windows Redeploy (scripts folder)
-
-```powershell
-# Re-apply env/config if needed
-powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
-
-# Rebuild + publish insurance/payer static assets to nginx
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy-dxp-static.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -NginxHtmlRoot "C:\nginx\html"
-
-# Rebuild + reinstall/restart BFF as Windows service
-powershell -ExecutionPolicy Bypass -File .\scripts\install-dxp-bff-service.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -ServiceName "DxpBff" -NssmExe "C:\nssm\win64\nssm.exe" -BuildBff
-```
-
-### macOS/Linux
-
-```bash
-make up
-make dev
-make down
-make status
-make fhir-seed
-make fhir-reset
-```

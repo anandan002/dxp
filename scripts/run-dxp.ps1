@@ -663,7 +663,7 @@ function Wait-ForFhir {
 
   for ($i = 1; $i -le $MaxAttempts; $i++) {
     $statusCode = Get-HttpStatusFast -Url $script:FhirMetadataUrl -TimeoutSeconds 8
-    if ($null -ne $statusCode -and $statusCode -ge 200 -and $statusCode -lt 500) {
+    if ($null -ne $statusCode -and $statusCode -ge 200 -and $statusCode -lt 300) {
       Write-Ok "FHIR is reachable: $($script:FhirMetadataUrl) (HTTP $statusCode)"
       return $true
     }
@@ -683,10 +683,14 @@ function Show-FhirStatus {
   }
 
   $statusCode = Get-HttpStatusFast -Url $script:FhirMetadataUrl -TimeoutSeconds 8
-  if ($null -ne $statusCode -and $statusCode -ge 200 -and $statusCode -lt 500) {
+  if ($null -ne $statusCode -and $statusCode -ge 200 -and $statusCode -lt 300) {
     Write-Ok "FHIR metadata is reachable: HTTP $statusCode at $($script:FhirMetadataUrl)"
   } else {
-    Write-WarnMsg "FHIR metadata endpoint is not reachable: $($script:FhirMetadataUrl)"
+    if ($null -ne $statusCode) {
+      Write-WarnMsg "FHIR metadata endpoint returned HTTP $statusCode (expected 2xx): $($script:FhirMetadataUrl)"
+    } else {
+      Write-WarnMsg "FHIR metadata endpoint is not reachable: $($script:FhirMetadataUrl)"
+    }
   }
 
   if (Test-Path $script:HapiOutLogPath) {
@@ -716,7 +720,7 @@ function Stop-LocalHapiFhir {
 
 function Start-LocalHapiFhir {
   $existingStatus = Get-HttpStatusFast -Url $script:FhirMetadataUrl -TimeoutSeconds 8
-  if ($null -ne $existingStatus -and $existingStatus -ge 200 -and $existingStatus -lt 500) {
+  if ($null -ne $existingStatus -and $existingStatus -ge 200 -and $existingStatus -lt 300) {
     Write-Ok "FHIR already running (HTTP $existingStatus): $($script:FhirMetadataUrl)"
     return $true
   }
@@ -958,8 +962,10 @@ if ($HealthCheck) {
 
   if ($StartFhir -or $SeedFhir -or $FhirStatus -or $All) {
     $fhirStatus = Get-HttpStatusFast -Url $script:FhirMetadataUrl -TimeoutSeconds 10
-    if ($null -ne $fhirStatus) {
+    if ($null -ne $fhirStatus -and $fhirStatus -ge 200 -and $fhirStatus -lt 300) {
       Write-Ok "FHIR metadata HTTP ${fhirStatus}: $($script:FhirMetadataUrl)"
+    } elseif ($null -ne $fhirStatus) {
+      Write-WarnMsg "FHIR metadata check returned HTTP ${fhirStatus} (expected 2xx): $($script:FhirMetadataUrl)"
     } else {
       Write-WarnMsg "FHIR health check failed: unable to reach $($script:FhirMetadataUrl)"
     }

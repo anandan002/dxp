@@ -1,21 +1,21 @@
 # Quick Start
 
-This quick start is split by operating system and runtime mode.
+This quick start is split by operating system and runtime model.
 
 ## Runtime Matrix
 
 | OS | Recommended mode | Infra model |
 |---|---|---|
-| Windows | No-docker local mode | Use local/external infra endpoints; start apps via PowerShell scripts |
-| macOS | Docker flow | Start Keycloak/Kong/HAPI with `make up` |
-| Linux | Docker flow | Start Keycloak/Kong/HAPI with `make up` |
+| Windows | No-docker, script-first | Local/external infra endpoints, optional local HAPI |
+| macOS | Docker-first | `docker compose` via `make up` |
+| Linux | Docker-first | `docker compose` via `make up` |
 
 ## Common Prerequisites
 
 - Node.js >= 22
-- pnpm >= 10 (via corepack)
+- pnpm >= 10 (`corepack`)
 - PostgreSQL local
-- Redis local (optional in no-docker mode)
+- `.env` from `.env.example`
 
 ## 1. Clone and install
 
@@ -24,6 +24,16 @@ git clone <repo-url> dxp
 cd dxp
 pnpm install
 cp .env.example .env
+```
+
+Set minimum values in `.env`:
+
+```env
+POSTGRES_USER=dxp
+POSTGRES_PASSWORD=<password>
+POSTGRES_DB=dxp
+VITE_BFF_URL=/dxp/api/v1
+FHIR_BASE_URL=http://localhost:5028/fhir
 ```
 
 ## 2. Windows (no-docker path)
@@ -35,10 +45,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartBff -StartP
 
 Notes:
 - Do not use `make` in this path.
-- `-StartFhir` supports local no-docker mode (Java 17 + PostgreSQL required).
-- For FHIR features, set `FHIR_BASE_URL` to a reachable endpoint.
-- Payer starter defaults to `VITE_BFF_URL=/dxp/api/v1` (works with nginx route `/dxp/api -> BFF`).
-- `DEV_MEMBER_ID` must be a plain UUID (example: `7de24de3-a6ee-464e-88ad-004799281205`), not `DEV_MEMBER_ID=<uuid>`.
+- `-StartFhir` runs local HAPI FHIR without Docker (Java 17 + PostgreSQL).
+- For seeded payer data, `FHIR_BASE_URL` must be reachable.
 
 ## 3. macOS/Linux (docker path)
 
@@ -58,44 +66,36 @@ make dev
 - Kong admin: http://localhost:5027
 - HAPI FHIR: http://localhost:5028/fhir
 
-## 5. FHIR Seed
+## 5. FHIR seed
 
-Seed only when `FHIR_BASE_URL` is reachable:
+Windows:
 
 ```powershell
 cd apps\bff
 & "D:\soft\node-v24.14.0-win-x64\corepack.cmd" pnpm seed:fhir
 ```
 
-Or on macOS/Linux:
+macOS/Linux:
 
 ```bash
 make fhir-seed
 ```
 
-## 6. Windows Redeploy (scripts folder)
+## 6. Routing contract for deployment
 
-Use this when code has changed and you need to republish/restart services:
+Canonical public base path is `/dxp`:
+- `/dxp/` -> insurance portal static
+- `/dxp/api/*` -> BFF API
+- `/dxp/payer` -> payer portal static
+- `/dxp/storybook` -> Storybook static
 
-```powershell
-# 1) Re-apply environment/config if needed
-powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
+See full deployment steps in [deployment.md](deployment.md).
 
-# 2) Rebuild + publish static portals to nginx
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy-dxp-static.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -NginxHtmlRoot "C:\nginx\html"
+## 7. Troubleshooting (payer shows mock data after seed)
 
-# 3) Rebuild + reinstall/restart BFF Windows service
-powershell -ExecutionPolicy Bypass -File .\scripts\install-dxp-bff-service.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -ServiceName "DxpBff" -NssmExe "C:\nssm\win64\nssm.exe" -BuildBff
+If seed succeeds but `/dxp/payer` still shows fallback data:
 
-# 4) Start and verify local FHIR (optional)
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -StartFhir -NodeDir "D:\soft\node-v24.14.0-win-x64"
-powershell -ExecutionPolicy Bypass -File .\scripts\run-dxp.ps1 -FhirStatus -NodeDir "D:\soft\node-v24.14.0-win-x64"
-```
-
-## 7. Troubleshooting seeded data not showing in payer portal
-
-If FHIR seed succeeds but `/dxp/payer` still shows fallback/mock data:
-
-1. Fix malformed member id in `.env` (plain UUID only), then restart BFF.
-2. In browser DevTools Console, run `localStorage.removeItem('dxp_dev_member_id')`.
-3. Reload `/dxp/payer` and select a member from the avatar menu.
+1. Ensure `.env` has `DEV_MEMBER_ID` as plain UUID only.
+2. Restart BFF.
+3. In browser console: `localStorage.removeItem('dxp_dev_member_id')`
+4. Reload `/dxp/payer` and select a member from avatar menu.

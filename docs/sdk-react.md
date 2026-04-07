@@ -10,12 +10,14 @@ Wrap your app with `DxpProvider`:
 import { DxpProvider } from '@dxp/sdk-react';
 
 <DxpProvider config={{
-  bffUrl: 'http://localhost:5026/api/v1',
+  bffUrl: '/dxp/api/v1',
   getAccessToken: async () => localStorage.getItem('token'),
 }}>
   <App />
 </DxpProvider>
 ```
+
+For direct local BFF access without nginx routing, use `http://localhost:5021/api/v1`.
 
 ## Hooks
 

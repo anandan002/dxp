@@ -58,6 +58,15 @@ function Publish-StaticDist {
 
 $insuranceDir = Join-Path $RepoRoot "starters\insurance-portal"
 $payerDir = Join-Path $RepoRoot "starters\payer-portal"
+$uiDir = Join-Path $RepoRoot "packages\ui"
+$storybookPublicDir = Join-Path $insuranceDir "public\storybook"
+
+Write-Step "Building Storybook static"
+if (Test-Path $storybookPublicDir) {
+  Remove-Item -LiteralPath $storybookPublicDir -Recurse -Force
+}
+Invoke-PnpmAt -WorkingDir $uiDir -PnpmArgs @("exec", "storybook", "build", "-o", $storybookPublicDir)
+Write-Host "  + Storybook static generated at: $storybookPublicDir" -ForegroundColor Green
 
 Write-Step "Building insurance portal"
 Invoke-PnpmAt -WorkingDir $insuranceDir -PnpmArgs @("exec", "vite", "build")
@@ -74,3 +83,4 @@ Publish-StaticDist -SourceDist (Join-Path $payerDir "dist") -DestinationDir $dxp
 
 Write-Host "  + Published insurance portal to: $dxpDir" -ForegroundColor Green
 Write-Host "  + Published payer portal to:     $dxpPayerDir" -ForegroundColor Green
+Write-Host "  + Published Storybook to:        $(Join-Path $dxpDir 'storybook')" -ForegroundColor Green
