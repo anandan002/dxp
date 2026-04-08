@@ -26,10 +26,10 @@ Use `/dxp` as the public base path:
 powershell -ExecutionPolicy Bypass -File .\scripts\configure-dxp.ps1 -NonInteractive -NodeDir "D:\soft\node-v24.14.0-win-x64"
 ```
 
-### 2) Build and publish static assets to nginx
+### 2) Build static assets in project folders (no copy)
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy-dxp-static.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp" -NginxHtmlRoot "C:\nginx\html"
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy-dxp-static.ps1 -NodeDir "D:\soft\node-v24.14.0-win-x64" -RepoRoot "D:\dxp"
 ```
 
 ### 3) Install/update BFF Windows service
@@ -61,16 +61,11 @@ cd starters/insurance-portal && pnpm build
 cd ../payer-portal && pnpm build
 ```
 
-### 3) Publish static assets to nginx html root
+### 3) Serve dist folders directly from nginx
 
-Example with `NGINX_HTML_ROOT=/var/www/html`:
-
-```bash
-mkdir -p /var/www/html/dxp/payer
-cp -R starters/insurance-portal/dist/* /var/www/html/dxp/
-cp -R starters/payer-portal/dist/* /var/www/html/dxp/payer/
-cp -R starters/insurance-portal/public/storybook /var/www/html/dxp/storybook
-```
+Point nginx `alias`/`root` to project `dist` directories:
+- insurance: `<repo-root>/starters/insurance-portal/dist`
+- payer: `<repo-root>/starters/payer-portal/dist`
 
 ### 4) Run BFF
 
@@ -88,15 +83,15 @@ Option B (host-managed service):
 
 ```nginx
 location /dxp/ {
+  alias D:/dxp/starters/insurance-portal/dist/;
+  index index.html;
   try_files $uri $uri/ /dxp/index.html;
 }
 
 location /dxp/payer/ {
+  alias D:/dxp/starters/payer-portal/dist/;
+  index index.html;
   try_files $uri $uri/ /dxp/payer/index.html;
-}
-
-location /dxp/storybook/ {
-  try_files $uri $uri/ /dxp/storybook/index.html;
 }
 
 location /dxp/api/ {
@@ -107,8 +102,8 @@ location /dxp/api/ {
 ## Redeploy Checklist
 
 1. Pull latest code.
-2. Rebuild static artifacts.
-3. Republish `/dxp`, `/dxp/payer`, `/dxp/storybook`.
+2. Rebuild static artifacts (`dist`) in project folders.
+3. Ensure nginx still points to project `dist` folders.
 4. Restart BFF service/process.
 5. Validate:
    - `http://localhost:5021/api/v1/health`

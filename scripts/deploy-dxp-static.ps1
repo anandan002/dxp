@@ -1,6 +1,7 @@
 param(
   [string]$NodeDir = "D:\soft\node-v24.14.0-win-x64",
   [string]$RepoRoot = "D:\dxp",
+  # Deprecated: kept only for backward-compatible invocation; this script no longer copies files to nginx root.
   [string]$NginxHtmlRoot = "C:\nginx\html"
 )
 
@@ -39,23 +40,6 @@ function Invoke-PnpmAt {
   }
 }
 
-function Publish-StaticDist {
-  param(
-    [string]$SourceDist,
-    [string]$DestinationDir
-  )
-
-  if (-not (Test-Path $SourceDist)) {
-    throw "Build output not found: $SourceDist"
-  }
-
-  if (Test-Path $DestinationDir) {
-    Remove-Item -LiteralPath $DestinationDir -Recurse -Force
-  }
-  New-Item -ItemType Directory -Path $DestinationDir -Force | Out-Null
-  Copy-Item -Path (Join-Path $SourceDist "*") -Destination $DestinationDir -Recurse -Force
-}
-
 $insuranceDir = Join-Path $RepoRoot "starters\insurance-portal"
 $payerDir = Join-Path $RepoRoot "starters\payer-portal"
 $uiDir = Join-Path $RepoRoot "packages\ui"
@@ -74,13 +58,23 @@ Invoke-PnpmAt -WorkingDir $insuranceDir -PnpmArgs @("exec", "vite", "build")
 Write-Step "Building payer portal"
 Invoke-PnpmAt -WorkingDir $payerDir -PnpmArgs @("exec", "vite", "build")
 
-Write-Step "Publishing static assets to nginx html root"
-$dxpDir = Join-Path $NginxHtmlRoot "dxp"
-$dxpPayerDir = Join-Path $dxpDir "payer"
+$insuranceDist = Join-Path $insuranceDir "dist"
+$payerDist = Join-Path $payerDir "dist"
+$insuranceStorybookDist = Join-Path $insuranceDist "storybook"
 
-Publish-StaticDist -SourceDist (Join-Path $insuranceDir "dist") -DestinationDir $dxpDir
-Publish-StaticDist -SourceDist (Join-Path $payerDir "dist") -DestinationDir $dxpPayerDir
+if (-not (Test-Path $insuranceDist)) {
+  throw "Insurance portal dist not found: $insuranceDist"
+}
+if (-not (Test-Path $payerDist)) {
+  throw "Payer portal dist not found: $payerDist"
+}
 
-Write-Host "  + Published insurance portal to: $dxpDir" -ForegroundColor Green
-Write-Host "  + Published payer portal to:     $dxpPayerDir" -ForegroundColor Green
-Write-Host "  + Published Storybook to:        $(Join-Path $dxpDir 'storybook')" -ForegroundColor Green
+Write-Step "Build completed (no copy to nginx root)"
+Write-Host "  + Insurance portal build: $insuranceDist" -ForegroundColor Green
+Write-Host "  + Payer portal build:     $payerDist" -ForegroundColor Green
+if (Test-Path $insuranceStorybookDist) {
+  Write-Host "  + Storybook static build:  $insuranceStorybookDist" -ForegroundColor Green
+} else {
+  Write-Host "  ! Storybook folder not found in insurance dist: $insuranceStorybookDist" -ForegroundColor Yellow
+}
+Write-Host "  - Configure nginx alias/root to serve these project dist folders directly." -ForegroundColor Gray
